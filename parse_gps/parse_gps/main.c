@@ -75,7 +75,7 @@ char parse( char* input, struct GPS* gps)
         }
         
         //Check to see if we are getting valid data
-        if (splitString[2][1] == 'A')
+        if (splitString[2][1] != "A")
         {
             return 1;
         }
