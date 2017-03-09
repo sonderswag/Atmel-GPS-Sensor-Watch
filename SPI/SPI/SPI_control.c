@@ -40,7 +40,7 @@ unsigned char spi_tranceiver(unsigned char data)
 
 
 // assumes ddr register is already enable for output and not input
-void pin_state(char port, char state)
+void digitalWrite(char port, char state)
 {
     if (port == 1 || (port >= 23 && port <= 28 )) // c
     {
@@ -114,12 +114,12 @@ void pin_state(char port, char state)
 
 void enable_SPI_device(port)
 {
-    pin_state(port, 0);
+    digitalWrite(port, 0);
 }
 
 void disable_SPI_device(port)
 {
-    pin_state(port, 1);
+    digitalWrite(port, 1);
 }
 
 

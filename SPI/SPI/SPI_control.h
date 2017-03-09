@@ -17,7 +17,7 @@
 
 void spi_init_master (void);
 unsigned char spi_tranceiver (unsigned char data);
-void pin_state(char port, char state);
+void digitalWrite(char port, char state);
 void enable_SPI_device(port);
 void disable_SPI_device(port);
 

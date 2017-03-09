@@ -3,6 +3,9 @@
 #include <util/delay.h>
 #include <string.h> 
 
+
+// ls/dev/tty.usb*
+// screen/dev/tty.usberial-A9015MC8 9600 
 void serial_init(unsigned short ubrr)	{
 	UBRR0 = ubrr;
 	UCSR0B |= (1 << TXEN0);
