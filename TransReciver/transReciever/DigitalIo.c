@@ -1,8 +1,7 @@
 
 #include "DigitalIo.h"
 // assumes ddr register is already enable for output and not input
-void digitalWrite(char port, char state)
-{
+void digitalWrite(char port, char state) {
     if (port == 1 || (port >= 23 && port <= 28 )) // c
     {
         if (port == 1)
@@ -45,7 +44,7 @@ void digitalWrite(char port, char state)
     }
 }
 
-void pinMode(char pin, char mode)
+void pinMode(char port, char mode)
 {
     if (port == 1 || (port >= 23 && port <= 28 )) // c
     {

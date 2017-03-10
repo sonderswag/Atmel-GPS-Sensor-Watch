@@ -6,14 +6,18 @@
 //  Copyright © 2017 Christian Wagner. All rights reserved.
 //
 
-#include "SPI_control.h"
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <stdint.h>
+#include "SPI_control.h"
+#include "DigitalIo.h"
+
 
 // Initialize SPI Master Device (with SPI interrupt)
 void spi_init_master (void)
 {
+    cli(); 
     // Set MOSI, SCK as Output
     DDRB=(1<<5)|(1<<3);
     
@@ -28,7 +32,7 @@ void spi_init_master (void)
 
 
 // Write to the SPI bus (MOSI pin) and also receive (MISO pin)
-  uint8_t transfer(uint8_t data) 
+  char SPI_transfer(char data) 
   {
     SPDR = data;
     /*
@@ -43,19 +47,20 @@ void spi_init_master (void)
   }
 
 //Function to transfer a list of chars 
-void SPI_tranceiver(void *data, size_t count)
+  // count is in bytes 
+void SPI_multiTransfer(void *data, size_t count)
 {
     if (count == 0) return;
     
-    unit8_t *buf = (unit8_t *)data; // loading in the buffer
+    char *buf = (char *)data; // loading in the buffer
     SPDR = *buf; // SPDR is the registered that the data will be transfered from
     while (--count > 0)
     {
-        unit8_t out = *(buf+1);
+        char out = *(buf+1);
         while(!(SPSR & (1<<SPIF) )); // where the actual transfer happens
-        unit8_t in = SPDR; // getting the input
+        char in = SPDR; // getting the input
         SPDR = out; // loading the next byte to pushed out
-        *buf+ = in; // loading into the buffer the recieved data
+        *buf += in; // loading into the buffer the recieved data
         
     }
     while(!(SPSR & (1<<SPIF) )); ; // get the last bit 
@@ -63,19 +68,41 @@ void SPI_tranceiver(void *data, size_t count)
 }
 
 
-
-
-void SPI_enableDevice(port)
+void SPI_enableDevice(char port)
 {
     digitalWrite(port, 0);
 }
 
-void SPI_disableDevice(port)
+void SPI_disableDevice(char port)
 {
     digitalWrite(port, 1);
 }
 
+/* this handels slecting the clock polarity and the clock phase 
+    give is one of the above modes to change CPOL and CPHA 
+    
+*/ 
+void SPI_setDataMode(char dataMode)
+{
+    SPCR = (SPCR & ~SPI_MODE_MASK) | dataMode;
+}
 
+/* DORD stands for Data ORDer. Set this bit to 1 if you want to transmit 
+    LSB first, else set it to 0, in which case it sends out MSB first. 
+*/
+void SPI_setBitOrder(char bitOrder) 
+{
+    if (bitOrder == 0) SPCR |= (1 << DORD); // transmitting LSB first 
+    else SPCR &= ~( 1 << DORD); // transmitting MSB first 
+}
+
+// This function is deprecated.  New applications should use
+// beginTransaction() to configure SPI settings.
+void SPI_setClockDivider(char clockDiv) 
+{
+    SPCR = (SPCR & ~SPI_CLOCK_MASK) | (clockDiv & SPI_CLOCK_MASK); // this is just changing the first two bits of SPCR 
+    SPSR = (SPSR & ~SPI_2XCLOCK_MASK) | ((clockDiv >> 2) & SPI_2XCLOCK_MASK); // this is just chaning the 2X bit 
+}
 
 
 //ISR(SPI_STC_vect)

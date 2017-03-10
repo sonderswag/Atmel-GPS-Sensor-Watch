@@ -24,7 +24,7 @@
 #define SPI_CLOCK_DIV8 0x05
 #define SPI_CLOCK_DIV32 0x06
 
-#define SPI_MODE0 0x00
+#define SPI_MODE0 0x00 //use this mode for the transreciver 
 #define SPI_MODE1 0x04
 #define SPI_MODE2 0x08
 #define SPI_MODE3 0x0C
@@ -37,30 +37,21 @@
 #define SPI_2XCLOCK_MASK 0x01  // SPI2X = bit 0 on SPSR
 
 void spi_init_master (void);
-uint8_t transfer(uint8_t data) 
-void SPI_tranceiver(void *data, size_t count); 
-void SPI_enableDevice(port); 
-void SPI_disableDevice(port); 
+char SPI_transfer(char data) ; 
+void SPI_multiTransfer(void *data, size_t count);
+void SPI_enableDevice(char port); 
+void SPI_disableDevice(char port); 
 
 /* this handels slecting the clock polarity and the clock phase 
 	give is one of the above modes to change CPOL and CPHA 
 	
 */ 
-void SPI_setDataMode(uint8_t dataMode) {
-    SPCR = (SPCR & ~SPI_MODE_MASK) | dataMode;
-  }
+void SPI_setDataMode(char dataMode);
 
 /* DORD stands for Data ORDer. Set this bit to 1 if you want to transmit 
 	LSB first, else set it to 0, in which case it sends out MSB first. 
 */
-void SPI_setBitOrder(uint8_t bitOrder) {
-    if (bitOrder == 0) SPCR |= (1 << DORD); // transmitting LSB first 
-    else SPCR &= ~( 1 << DORD); // transmitting MSB first 
-  }
-
+void SPI_setBitOrder(char bitOrder) ;
 // This function is deprecated.  New applications should use
 // beginTransaction() to configure SPI settings.
-void SPI_setClockDivider(uint8_t clockDiv) {
-    SPCR = (SPCR & ~SPI_CLOCK_MASK) | (clockDiv & SPI_CLOCK_MASK); // this is just changing the first two bits of SPCR 
-    SPSR = (SPSR & ~SPI_2XCLOCK_MASK) | ((clockDiv >> 2) & SPI_2XCLOCK_MASK); // this is just chaning the 2X bit 
-  }
+void SPI_setClockDivider(char clockDiv) ;

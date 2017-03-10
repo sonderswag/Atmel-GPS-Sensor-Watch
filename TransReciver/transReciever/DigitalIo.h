@@ -13,4 +13,4 @@
 
 
 void digitalWrite(char port, char state);
-void pinMode(char pin, char mode)
+void pinMode(char port, char mode);

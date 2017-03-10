@@ -197,7 +197,7 @@ bool RH_RF69::init()
 void RH_RF69::handleInterrupt()
 {
     // Get the interrupt cause
-    uint8_t irqflags2 = spiRead(RH_RF69_REG_28_IRQFLAGS2);
+    uint8_t irqflags2 = spiRead(RH_RF69_REG_28_IRQFLAGS2); //status regidter for fifo 
     if (_mode == RHModeTx && (irqflags2 & RH_RF69_IRQFLAGS2_PACKETSENT))
     {
 	// A transmitter message has been fully sent
