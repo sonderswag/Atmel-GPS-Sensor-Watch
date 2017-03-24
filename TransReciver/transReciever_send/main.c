@@ -38,7 +38,7 @@ int main(int argc, const char * argv[]) {
 	char message[] = "hey you there" ;
 	
 
-	radio.buffer_length = Read_FIFO(radio.buffer, radio.slaveSelectPin);
+	// radio.buffer_length = Read_FIFO(radio.buffer, radio.slaveSelectPin);
 
 
 	while (1)
