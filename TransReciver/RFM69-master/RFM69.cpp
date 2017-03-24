@@ -88,6 +88,7 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
   SPI.begin();
   unsigned long start = millis();
   uint8_t timeout = 50;
+  // writting the sync words 
   do writeReg(REG_SYNCVALUE1, 0xAA); while (readReg(REG_SYNCVALUE1) != 0xaa && millis()-start < timeout);
   start = millis();
   do writeReg(REG_SYNCVALUE1, 0x55); while (readReg(REG_SYNCVALUE1) != 0x55 && millis()-start < timeout);
@@ -287,11 +288,11 @@ void RFM69::sendFrame(uint8_t toAddress, const void* buffer, uint8_t bufferSize,
 
   // write to FIFO
   select();
-  SPI.transfer(REG_FIFO | 0x80);
-  SPI.transfer(bufferSize + 3);
-  SPI.transfer(toAddress);
-  SPI.transfer(_address);
-  SPI.transfer(CTLbyte);
+  SPI.transfer(REG_FIFO | 0x80); //writting 
+  SPI.transfer(bufferSize + 3); // the size of the message 
+  SPI.transfer(toAddress); //reciever's address set with 0x38 
+  SPI.transfer(_address); // sender's address set with 0x039
+  SPI.transfer(CTLbyte); // this is the ack handsake should include latter 
 
   for (uint8_t i = 0; i < bufferSize; i++)
     SPI.transfer(((uint8_t*) buffer)[i]);

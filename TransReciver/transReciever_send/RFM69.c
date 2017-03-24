@@ -95,6 +95,13 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 	}
 
 	cli(); 
+
+	RFM_setMode(currentMode,0,cs); // set mode to idle 
+	while ((readReg(RH_RF69_REG_27_IRQFLAGS1) & 0x80) == 0x00); // wait for ModeReady in idle 
+
+	RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x00); 
+
+	
 	digitalWrite(cs, 0); 
 	char message[2] = {RH_RF69_REG_00_FIFO | RH_SPI_WRITE_MASK, length};
 	SPI_multiWrite(message,2);
@@ -106,7 +113,7 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 	digitalWrite(cs, 1); 
 	sei();
 
-	RFM_setModeTx(currentMode,cs);
+	RFM_setMode(currentMode,2,cs); //TX 
 }
 
 void RFM_spiConfig(char cs) 
@@ -246,7 +253,7 @@ void RFM_setFrequency(float centre, char cs )
 100 → Receiver mode (RX) 			   :: RH_RF69_OPMODE_MODE_RX   
 */ 
 
-void RFM_setOpMode(char mode, char cs)
+void RFM_modeSetter(char mode, char cs)
 {
     char opmode = RFM_readReg(RH_RF69_REG_01_OPMODE, cs); // access 0x01 register which holds operation mode 
     opmode &= ~RH_RF69_OPMODE_MODE; // setting bits 4-2 to zero 
@@ -258,48 +265,83 @@ void RFM_setOpMode(char mode, char cs)
 	
 }
 
-void RFM_setModeRx(char* currentMode, char cs)
+void RFM_setMode(char* currentMode, char mode, char cs)
 {
-	if (*currentMode == 1 ) // checking to see if it is already in rx mode 
+	if (*currentMode == mode ) // checking to see if it is already in rx mode 
 	{
 		return ; 
 	}
 
-	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 
-	RFM_writeReg(RH_RF69_REG_5C_TESTPA2, RH_RF69_TESTPA2_BOOST, cs); 
+	if (mode == 0) // idle
+	{
+		*currentMode = 0; 
+		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x55, cs); // used to boost power to transmitter / reciever 
+		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x70, cs); 
+		RFM_setOpMode(RH_RF69_OPMODE_MODE_STDBY,cs);
+	}
 
-	RFM_setOpMode(RH_RF69_OPMODE_MODE_RX,cs); 
+	else if (mode == 1) //recieve 
+	{
+		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x55, cs); // used to boost power to transmitter / reciever 
+		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x70, cs); 
+		RFM_setOpMode(RH_RF69_OPMODE_MODE_RX,cs); 
+		RFM_setHighPower(0);
+		*currentMode = 1 ; 
+	}
 
-	*currentMode = 1 ; 
+	else if (mode == 2) // transmit 
+	{
+		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x5d, cs); // used to boost power to transmitter / reciever 
+		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x7c, cs); 
+		RFM_setOpMode(RH_RF69_OPMODE_MODE_TX,cs); 
+		RFM_setHighPower(1);
 
+		*currentMode = 2; 
+	}
+	
 }
 
-void RFM_setModeTx(char* currentMode, char cs)
+// set *transmit/TX* output power: 0=min, 31=max
+// this results in a "weaker" transmitted signal, and directly results in a lower RSSI at the receiver
+// the power configurations are explained in the SX1231H datasheet (Table 10 on p21; RegPaLevel p66): http://www.semtech.com/images/datasheet/sx1231h.pdf
+// valid powerLevel parameter values are 0-31 and result in a directly proportional effect on the output/transmission power
+// this function implements 2 modes as follows:
+//       - for RFM69W the range is from 0-31 [-18dBm to 13dBm] (PA0 only on RFIO pin)
+//       - for RFM69HW the range is from 0-31 [5dBm to 20dBm]  (PA1 & PA2 on PA_BOOST pin & high Power PA settings - see section 3.3.7 in datasheet, p22)
+void RFM_setPowerLevel(char powerLevel)
 {
-	if (*currentMode == 2) // 
-	{
-		return ; 
-	}
-
-	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 
-	RFM_writeReg(RH_RF69_REG_5C_TESTPA2, RH_RF69_TESTPA2_BOOST, cs); 
-
-	RFM_setOpMode(RH_RF69_OPMODE_MODE_TX,cs); 
-
-	*currentMode = 2; 
+  powerLevel = (powerLevel > 31 ? 31 : powerLevel);
+  powerLevel /= 2;
+  RFM_writeReg(RH_RF69_REG_11_PALEVEL, (readReg(RH_RF69_REG_11_PALEVEL) & 0xE0) | powerLevel);
 }
 
-void RFM_setModeIdle(char* currentMode, char cs)
+// for RFM69HW only: you must call setHighPower(true) after initialize() or else transmission won't work
+void RFM_setHighPower(char onOff)
 {
-	if (*currentMode == 0) // idle 
+	RFM_writeReg(RH_RF69_REG_13_OCP,onOff ? 0x0F, 0x1A); // turning off the overload current protection for PA 
+	if (onOff)
 	{
-		return ; 
+		RFM_writeReg(RH_RF69_REG_11_PALEVEL, (RFM_readReg(RH_RF69_REG_11_PALEVEL) & 0x1F | 0x40 | 0x20 ));
 	}
+	else 
+	{
+		RFM_writeReg(RH_RF69_REG_11_PALEVEL,(RFM_readReg(RH_RF69_REG_11_PALEVEL) & 0x1F & ~0x40 & ~0x20 ));
+	}
+}
 
-	*currentMode = 0; 
-
-	RFM_setOpMode(RH_RF69_OPMODE_MODE_STDBY,cs);
-
+// get the received signal strength indicator (RSSI)
+int RFM_readRSSI() 
+{
+  int rssi = 0;
+  if (forceTrigger)
+  {
+    // RSSI trigger not needed if DAGC is in continuous mode
+    writeReg(RH_RF69_REG_23_RSSICONFIG, 0x01); //start the measurements 
+    while ((readReg(RH_RF69_REG_23_RSSICONFIG) & 0x02) == 0x00); // wait for RSSI_Ready
+  }
+  rssi = -readReg(RH_RF69_REG_24_RSSIVALUE);
+  rssi >>= 1;
+  return rssi;
 }
 
 

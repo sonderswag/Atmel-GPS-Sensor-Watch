@@ -306,14 +306,16 @@ void RFM_burstRead(char address,  char* dest, char len,  char cs);
 
 void RFM_setFrequency(float centre, char cs ); 
 
-void RFM_setOpMode(char mode, char cs);
+void RFM_modeSetter(char mode, char cs)
 
-void RFM_setModeRx(char* currentMode, char cs); 
-
-void RFM_setModeTx(char* currentMode, char cs); 
+void RFM_setMode(char* currentMode, char mode, char cs)
 
 void RFM_send(char* data, char* currentMode, char length, char cs);
 
-void RFM_setModeIdle(char* currentMode, char cs);
-
 char Read_FIFO(char* buffer, char cs);
+
+void RFM_setPowerLevel(char powerLevel); 
+
+void RFM_setHighPower(char onOff); 
+
+int RFM_readRSSI() ; 

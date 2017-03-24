@@ -60,7 +60,7 @@ int main(int argc, const char * argv[]) {
 
 		// char synConfig = RFM_readReg(0x01,24) ; 
 
-		_delay_ms(3000);
+		// _delay_ms(3000);
 
 	}
 
