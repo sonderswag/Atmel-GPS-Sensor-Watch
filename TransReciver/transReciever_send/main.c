@@ -49,6 +49,14 @@ int main(int argc, const char * argv[]) {
 
 
 		_delay_ms(5000);
+
+		// char buf[10];
+		// int temp = RFM_readRSSI(24);
+
+		// sprintf(buf,temp);
+		// serial_outputString(buf);
+
+
 		// char mess[2] = {0x11, 0x22};
 		// RFM_writeReg(RH_RF69_REG_3C_FIFOTHRESH, RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY | 0x0f, 24);
 		// digitalWrite(24,0);
