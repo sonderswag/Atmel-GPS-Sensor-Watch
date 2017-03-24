@@ -39,6 +39,8 @@
 void spi_init_master (void);
 char SPI_transfer(char data) ; 
 void SPI_multiTransfer(void *data, size_t count);
+void SPI_multiWrite(void *data, size_t count);
+
 void SPI_enableDevice(char port); 
 void SPI_disableDevice(char port); 
 

@@ -13,6 +13,8 @@
 #include "DigitalIo.h"
 #include "RFM69.h"
 
+//radio reset pin
+#define RF_reset_pin 11 
 
 // The crystal oscillator frequency of the RF69 module
 #define RH_RF69_FXOSC 32000000.0
@@ -21,11 +23,43 @@
 #define RH_RF69_FSTEP  (RH_RF69_FXOSC / 524288)
 
 
-// void RFM_initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID, char slaveSelectPin)
-// {
- 
+void RFM_init(char cs)
+{
+		// this is manulally resetting the transreciever 
+	pinMode(RF_reset_pin,1); 
+	digitalWrite(25,1);
+	_delay_ms(100);
+	digitalWrite(RF_reset_pin,0);
+	_delay_ms(100);
 
-// }
+
+	// Configure important RH_RF69 registers
+    // Here we set up the standard packet format for use by the RH_RF69 library:
+    // 4 bytes preamble
+    // 2 SYNC words 2d, d4
+    // 2 CRC CCITT octets computed on the header, length and data (this in the modem config data)
+    // 0 to 60 bytes data
+    // RSSI Threshold -114dBm
+    // We dont use the RH_RF69s address filtering: instead we prepend our own headers to the beginning
+    // of the RH_RF69 payload
+
+	// RH_RF69_REG_3C_FIFOTHRESH : 0x3c == Tx start 
+	// RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY : 0x80  setting threshold for fif0 to 0x8f as recommended 
+    RFM_writeReg(RH_RF69_REG_3C_FIFOTHRESH, RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY | 0x0f, cs); // thresh 15 is default
+
+    RFM_writeReg(RH_RF69_REG_6F_TESTDAGC, RH_RF69_TESTDAGC_CONTINUOUSDAGC_IMPROVED_LOWBETAOFF, cs);
+
+    RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_NORMAL, cs);
+    RFM_writeReg(RH_RF69_REG_5C_TESTPA2, RH_RF69_TESTPA2_NORMAL, cs);
+
+    char syncwords[] = {0x2d, 0x4d};
+    RFM_setSyncWords(syncwords, cs);
+
+    RHFM_setPreambleLength(4,cs); 
+
+    RFM_setFrequency(434.0, cs);
+
+}
 
 
 void RFM_spiConfig(char cs) 
@@ -65,12 +99,15 @@ void RFM_writeReg(char address, char data, char cs)
 	// next 7 bits are address to write to 
 
 	digitalWrite(cs, 0); 
+
+	char message[2] = {address | RH_SPI_WRITE_MASK,data };
+
 	address |= RH_SPI_WRITE_MASK; // putting 1 in MSB 
-	SPI_transfer(address); 
-	SPI_transfer(data); 
+	SPI_multiWrite(message,2);
 	digitalWrite(cs, 1); 
 	sei(); 
 }
+
 
 // read a single byte for a given register 
 char RFM_readReg(char address, char cs)
@@ -78,12 +115,16 @@ char RFM_readReg(char address, char cs)
 	cli(); 
 	digitalWrite(cs, 0);
 	address &= ~RH_SPI_WRITE_MASK; // putting 0 in MSB
-	SPI_transfer(address);
-	char value = SPI_transfer(0x00); // transfer 0's since we just want to read 
+
+	char message[] = {address, 0x00};
+	SPI_multiTransfer(message,2); 
+
 	digitalWrite(cs, 1);
 	sei(); 
-	return value ; 
+	return message[1] ; 
 }
+
+
 
 /* Write multiple bytes to radio 
 address :: address to write multiple bytes (0x00 is fifo )
@@ -110,13 +151,35 @@ void RFM_burstRead(char address, char* dest, char len, char cs)
 
 	while(len--) 
 	{
-		*dest++ = SPI_transfer(0x00); 
+		*dest++ = SPI_transfer(0x00); // reading the FIFO 
 	}
 
 	digitalWrite(cs, 1);
 	sei(); 
 }
 
+void RFM_setSyncWords(char* syncwords, char cs)
+{
+	// restricting number of sync words to 2 for now 
+	// getting the current syncConfig
+	// default number of sync words is 2 
+	// syncwords is on by default  
+
+	// currently not changing any of the default values 
+	// char synConfig = RFM_read(RH_RF69_REG_2E_SYNCCONFIG,cs) ; 
+
+	// setting the sync words 
+	RFM_writeReg(0x2f,syncwords[0],cs);
+	RFM_writeReg(0x30,syncwords[1],cs);
+
+	
+}
+
+void RHFM_setPreambleLength(uint16_t bytes, char cs)
+{
+    RFM_writeReg(RH_RF69_REG_2C_PREAMBLEMSB, bytes >> 8, cs);
+    RFM_writeReg(RH_RF69_REG_2D_PREAMBLELSB, bytes & 0xff,cs);
+}
 
 void RFM_setFrequency(float centre, char cs )
 {
@@ -144,15 +207,15 @@ void RFM_setOpMode(char mode, char cs)
     RFM_writeReg(RH_RF69_REG_01_OPMODE, opmode, cs);
 
     // Wait for mode to change. this could cause problems 
-    while (!(RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & RH_RF69_IRQFLAGS1_MODEREADY))
-	;
+    // while (!(RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & RH_RF69_IRQFLAGS1_MODEREADY));
+	
 }
 
 char RFM_setModeRx(char currentMode, char cs)
 {
 	if (currentMode == 1 ) // checking to see if it is already in rx mode 
 	{
-		return; 
+		return 0; 
 	}
 
 	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 
@@ -165,9 +228,9 @@ char RFM_setModeRx(char currentMode, char cs)
 
 char RFM_setModeTx( char currentMode, char cs)
 {
-	if (currentMode != 0) // change this in the final. just checking to see if I get communication. 
+	if (currentMode == 2) 
 	{
-		return; 
+		return 0; 
 	}
 
 	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 

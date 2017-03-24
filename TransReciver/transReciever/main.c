@@ -23,14 +23,29 @@ int main(int argc, const char * argv[]) {
 	radio.slaveSelectPin = 24; 
 	radio.currentMode = 1; 
 
-	// RFM_spiConfig(radio.slaveSelectPin) ;
-	pinMode(radio.slaveSelectPin, OUTPUT); 
-	digitalWrite(radio.slaveSelectPin, 0);
+
+	RFM_spiConfig(radio.slaveSelectPin) ;
+	RFM_init(radio.slaveSelectPin);
+
+	RFM_setModeRx(radio.currentMode, radio.slaveSelectPin); 
+
+
+
 	while (1)
 	{
-		// RFM_setModeTx(radio.currentMode, radio.slaveSelectPin); 
-		SPI_transfer(0xa3);
-		_delay_ms(5); 
+		// char mess[2] = {0x11, 0x22};
+		// RFM_writeReg(RH_RF69_REG_3C_FIFOTHRESH, RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY | 0x0f, 24);
+		// digitalWrite(24,0);
+		// SPI_multiWrite(mess,2);
+		// digitalWrite(24,1);
+		// RFM_writeReg(0x00,0x2d,24);
+		// RFM_readReg(0x2f,24);
+
+
+		char synConfig = RFM_readReg(0x01,24) ; 
+
+		_delay_ms(3000);
+
 	}
 
 

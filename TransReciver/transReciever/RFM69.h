@@ -286,7 +286,11 @@ struct RFM69
     
 };
 
-// void RFM_initialize(uint8_t freqBand, uint8_t ID, uint8_t networkID=1, char slaveSelectPin);
+void RFM_init(char cs); 
+
+void RHFM_setPreambleLength(uint16_t bytes, char cs); 
+
+void RFM_setSyncWords(char* syncwords, char cs);
 
 void RFM_spiConfig(char cs) ; 
 

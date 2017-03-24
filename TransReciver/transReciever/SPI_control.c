@@ -19,12 +19,12 @@ void spi_init_master (void)
 {
     cli(); 
     // Set MOSI, SCK as Output
-    DDRB=(1<<5)|(1<<3);
+    DDRB=(1<<5)|(1<<3)|(1<<PB2);
     
     // Enable SPI, Set as Master
     // Prescaler: Fosc/16, Enable Interrupts
     //The MOSI, SCK pins are as per ATMega8
-    SPCR=(1<<SPE)|(1<<MSTR)|(1<<SPR0)|(1<<SPIE);
+    SPCR=(1<<SPE)|(1<<MSTR)|(1<<SPR0);
     
     // Enable Global Interrupts
     sei();
@@ -47,7 +47,8 @@ void spi_init_master (void)
   }
 
 //Function to transfer a list of chars 
-  // count is in bytes 
+// count is in bytes 
+  // getting and sending multiple bytes of data 
 void SPI_multiTransfer(void *data, size_t count)
 {
     if (count == 0) return;
@@ -65,6 +66,28 @@ void SPI_multiTransfer(void *data, size_t count)
     }
     while(!(SPSR & (1<<SPIF) )); ; // get the last bit 
     *buf = SPDR;
+}
+
+//Function to transfer a list of chars 
+// count is in bytes 
+  // getting and sending multiple bytes of data 
+void SPI_multiWrite(void *data, size_t count)
+{
+    if (count == 0) return;
+    
+    char *buf = (char *)data; // loading in the buffer
+    char out = 0; 
+    SPDR = *buf; // SPDR is the registered that the data will be transfered from
+    while (--count > 0)
+    {
+        out = *(buf+1);
+        while(!(SPSR & (1<<SPIF) )); // where the actual transfer happens
+
+        SPDR = out; // loading the next byte to pushed out
+        
+    }
+    while(!(SPSR & (1<<SPIF) )); ; // get the last bit 
+    // *buf = SPDR;
 }
 
 
