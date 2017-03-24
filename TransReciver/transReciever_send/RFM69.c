@@ -64,9 +64,10 @@ void RFM_init(char cs)
 
 }
 
-char Read_FIFO(char* buffer, char cs)
+char Read_FIFO(char* buffer, char* currentMode, char cs)
 {
 	cli();
+	RFM_setMode(currentMode,0,cs); // set to idle
 	digitalWrite(cs, 0); 
 	SPI_transfer(RH_RF69_REG_00_FIFO);
 
@@ -80,7 +81,6 @@ char Read_FIFO(char* buffer, char cs)
 			buffer[buf_len] = SPI_transfer(0); 
 		}
 	}
-
 	digitalWrite(cs, 1); 
 	sei(); 
 
@@ -103,9 +103,6 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 		serial_outputString("stuck loop 1");
 	} // wait for ModeReady in idle 
 
-	RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x00,cs); 
-
-	
 	digitalWrite(cs, 0); 
 	char message[2] = {RH_RF69_REG_00_FIFO | RH_SPI_WRITE_MASK, length};
 	SPI_multiWrite(message,2);
@@ -129,6 +126,34 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 
 	RFM_setMode(currentMode,0,cs); // set to idle
 }
+
+char RFM_interruptHandler(char* currentMode, char cs) 
+{
+	serial_outputString("interrupt handeler");
+	if (*currentMode == 1 && (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2,cs) & 0x04))
+	{
+		serial_outputString("new data ");
+		return 1;
+	}
+	else 
+	{
+		return 0;
+	}
+}
+
+// void RFM_receive(char cs)
+// {
+
+// 	// avoid Rx deadlocks making sure the FIFO isn't overfilled 
+// 	if (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2,cs) & 0x04)
+// 	{
+// 		RFM_writeReg(RH_RF69_REG_3D_PACKETCONFIG2, (RFM_readReg(RH_RF69_REG_3D_PACKETCONFIG2,cs)& 0xFB) | 0x04, cs)
+// 	}
+// 	RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x40,cs); // set DIO0 to "PAYLOADREADY" in receive mode
+
+// 	RFM_setMode(currentMode,1,cs); // RX
+
+// }
 
 void RFM_spiConfig(char cs) 
 {
@@ -299,6 +324,7 @@ void RFM_setMode(char* currentMode, char mode, char cs)
 		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x55, cs); // used to boost power to transmitter / reciever 
 		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x70, cs); 
 		RFM_modeSetter(RH_RF69_OPMODE_MODE_RX,cs); 
+		RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x40,cs); // set DIO0 to "PAYLOADREADY" in receive mode
 		RFM_setHighPower(0,cs);
 		*currentMode = 1 ; 
 	}
@@ -308,6 +334,7 @@ void RFM_setMode(char* currentMode, char mode, char cs)
 		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x5d, cs); // used to boost power to transmitter / reciever 
 		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x7c, cs); 
 		RFM_modeSetter(RH_RF69_OPMODE_MODE_TX,cs); 
+		RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x00,cs); // setting DIO0 to packetsent for TX 
 		RFM_setHighPower(1,cs);
 
 		*currentMode = 2; 

@@ -38,7 +38,7 @@ int main(int argc, const char * argv[]) {
 	RFM_spiConfig(radio.slaveSelectPin) ;
 	RFM_init(radio.slaveSelectPin);
 
-	RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // RX
+	RFM_setMode(&radio.currentMode,1,cs); // RX
 
 	
 

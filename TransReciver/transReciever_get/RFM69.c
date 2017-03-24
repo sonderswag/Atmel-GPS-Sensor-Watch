@@ -64,9 +64,10 @@ void RFM_init(char cs)
 
 }
 
-char Read_FIFO(char* buffer, char cs)
+char Read_FIFO(char* buffer, char* currentMode, char cs)
 {
 	cli();
+	RFM_setMode(currentMode,0,cs); // set to idle
 	digitalWrite(cs, 0); 
 	SPI_transfer(RH_RF69_REG_00_FIFO);
 
@@ -80,7 +81,6 @@ char Read_FIFO(char* buffer, char cs)
 			buffer[buf_len] = SPI_transfer(0); 
 		}
 	}
-
 	digitalWrite(cs, 1); 
 	sei(); 
 
@@ -95,19 +95,65 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 	}
 
 	cli(); 
+
+	RFM_setMode(currentMode,0,cs); // set mode to idle 
+
+	while (RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & 0x80 == 0x00)
+	{
+		serial_outputString("stuck loop 1");
+	} // wait for ModeReady in idle 
+
 	digitalWrite(cs, 0); 
 	char message[2] = {RH_RF69_REG_00_FIFO | RH_SPI_WRITE_MASK, length};
 	SPI_multiWrite(message,2);
 
 	while(length--)
 	{
+		serial_out(*data);
 		SPI_transfer(*data++); 
+
 	}
 	digitalWrite(cs, 1); 
 	sei();
 
-	RFM_setModeTx(currentMode,cs);
+	RFM_setMode(currentMode,2,cs); //TX 
+	while(digitalRead(10) == 0) 
+	{
+		serial_outputString("stuck");
+	}// wait for the flag to say that it is done
+	serial_outputString(" !!!Packet Sent!!! ");
+
+
+	RFM_setMode(currentMode,0,cs); // set to idle
 }
+
+char RFM_interruptHandler(char* currentMode, char cs) 
+{
+	serial_outputString("interrupt handeler");
+	if (*currentMode == 1 && (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2,cs) & 0x04))
+	{
+		serial_outputString("new data ");
+		return 1;
+	}
+	else 
+	{
+		return 0;
+	}
+}
+
+// void RFM_receive(char cs)
+// {
+
+// 	// avoid Rx deadlocks making sure the FIFO isn't overfilled 
+// 	if (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2,cs) & 0x04)
+// 	{
+// 		RFM_writeReg(RH_RF69_REG_3D_PACKETCONFIG2, (RFM_readReg(RH_RF69_REG_3D_PACKETCONFIG2,cs)& 0xFB) | 0x04, cs)
+// 	}
+// 	RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x40,cs); // set DIO0 to "PAYLOADREADY" in receive mode
+
+// 	RFM_setMode(currentMode,1,cs); // RX
+
+// }
 
 void RFM_spiConfig(char cs) 
 {
@@ -246,7 +292,7 @@ void RFM_setFrequency(float centre, char cs )
 100 → Receiver mode (RX) 			   :: RH_RF69_OPMODE_MODE_RX   
 */ 
 
-void RFM_setOpMode(char mode, char cs)
+void RFM_modeSetter(char mode, char cs)
 {
     char opmode = RFM_readReg(RH_RF69_REG_01_OPMODE, cs); // access 0x01 register which holds operation mode 
     opmode &= ~RH_RF69_OPMODE_MODE; // setting bits 4-2 to zero 
@@ -258,48 +304,84 @@ void RFM_setOpMode(char mode, char cs)
 	
 }
 
-void RFM_setModeRx(char* currentMode, char cs)
+void RFM_setMode(char* currentMode, char mode, char cs)
 {
-	if (*currentMode == 1 ) // checking to see if it is already in rx mode 
+	if (*currentMode == mode ) // checking to see if it is already in rx mode 
 	{
 		return ; 
 	}
 
-	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 
-	RFM_writeReg(RH_RF69_REG_5C_TESTPA2, RH_RF69_TESTPA2_BOOST, cs); 
+	if (mode == 0) // idle
+	{
+		*currentMode = 0; 
+		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x55, cs); // used to boost power to transmitter / reciever 
+		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x70, cs); 
+		RFM_modeSetter(RH_RF69_OPMODE_MODE_STDBY,cs);
+	}
 
-	RFM_setOpMode(RH_RF69_OPMODE_MODE_RX,cs); 
+	else if (mode == 1) //recieve 
+	{
+		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x55, cs); // used to boost power to transmitter / reciever 
+		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x70, cs); 
+		RFM_modeSetter(RH_RF69_OPMODE_MODE_RX,cs); 
+		RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x40,cs); // set DIO0 to "PAYLOADREADY" in receive mode
+		RFM_setHighPower(0,cs);
+		*currentMode = 1 ; 
+	}
 
-	*currentMode = 1 ; 
+	else if (mode == 2) // transmit 
+	{
+		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x5d, cs); // used to boost power to transmitter / reciever 
+		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x7c, cs); 
+		RFM_modeSetter(RH_RF69_OPMODE_MODE_TX,cs); 
+		RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x00,cs); // setting DIO0 to packetsent for TX 
+		RFM_setHighPower(1,cs);
 
+		*currentMode = 2; 
+	}
+	
 }
 
-void RFM_setModeTx(char* currentMode, char cs)
+// set *transmit/TX* output power: 0=min, 31=max
+// this results in a "weaker" transmitted signal, and directly results in a lower RSSI at the receiver
+// the power configurations are explained in the SX1231H datasheet (Table 10 on p21; RegPaLevel p66): http://www.semtech.com/images/datasheet/sx1231h.pdf
+// valid powerLevel parameter values are 0-31 and result in a directly proportional effect on the output/transmission power
+// this function implements 2 modes as follows:
+//       - for RFM69W the range is from 0-31 [-18dBm to 13dBm] (PA0 only on RFIO pin)
+//       - for RFM69HW the range is from 0-31 [5dBm to 20dBm]  (PA1 & PA2 on PA_BOOST pin & high Power PA settings - see section 3.3.7 in datasheet, p22)
+void RFM_setPowerLevel(char powerLevel, char cs)
 {
-	if (*currentMode == 2) // 
-	{
-		return ; 
-	}
-
-	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 
-	RFM_writeReg(RH_RF69_REG_5C_TESTPA2, RH_RF69_TESTPA2_BOOST, cs); 
-
-	RFM_setOpMode(RH_RF69_OPMODE_MODE_TX,cs); 
-
-	*currentMode = 2; 
+  powerLevel = (powerLevel > 31 ? 31 : powerLevel);
+  powerLevel /= 2;
+  RFM_writeReg(RH_RF69_REG_11_PALEVEL, (RFM_readReg(RH_RF69_REG_11_PALEVEL,cs) & 0xE0) | powerLevel,cs);
 }
 
-void RFM_setModeIdle(char* currentMode, char cs)
+// for RFM69HW only: you must call setHighPower(true) after initialize() or else transmission won't work
+void RFM_setHighPower(char onOff, char cs)
 {
-	if (*currentMode == 0) // idle 
+
+	RFM_writeReg(RH_RF69_REG_13_OCP,onOff ? 0x0F : 0x1A, cs); // turning off the overload current protection for PA 
+	if (onOff)
 	{
-		return ; 
+		RFM_writeReg(RH_RF69_REG_11_PALEVEL, (RFM_readReg(RH_RF69_REG_11_PALEVEL,cs) & 0x1F) | 0x40 | 0x20 ,cs);
 	}
+	else 
+	{
+		RFM_writeReg(RH_RF69_REG_11_PALEVEL,(RFM_readReg(RH_RF69_REG_11_PALEVEL,cs) & 0x1F & ~0x40 & ~0x20 ),cs);
+	}
+}
 
-	*currentMode = 0; 
-
-	RFM_setOpMode(RH_RF69_OPMODE_MODE_STDBY,cs);
-
+// get the received signal strength indicator (RSSI)
+int RFM_readRSSI(char cs) 
+{
+  int rssi = 0;
+ 
+  RFM_writeReg(RH_RF69_REG_23_RSSICONFIG, 0x01,cs); //start the measurements 
+  while ((RFM_readReg(RH_RF69_REG_23_RSSICONFIG,cs) & 0x02) == 0x00); // wait for RSSI_Ready
+  
+  rssi = -RFM_readReg(RH_RF69_REG_24_RSSIVALUE,cs);
+  rssi >>= 1;
+  return rssi;
 }
 
 

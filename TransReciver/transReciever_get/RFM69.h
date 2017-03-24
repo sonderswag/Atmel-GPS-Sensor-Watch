@@ -283,7 +283,8 @@ struct RFM69
     char slaveSelectPin;
     char currentMode; // if 0 == sleep, 1 == rx, 2 == tx 
     char buffer[60];
-    char buffer_length; 
+    char buffer_length;
+    char receiveDataFlag; 
 
     
 };
@@ -306,14 +307,18 @@ void RFM_burstRead(char address,  char* dest, char len,  char cs);
 
 void RFM_setFrequency(float centre, char cs ); 
 
-void RFM_setOpMode(char mode, char cs);
+void RFM_modeSetter(char mode, char cs); 
 
-void RFM_setModeRx(char* currentMode, char cs); 
-
-void RFM_setModeTx(char* currentMode, char cs); 
+void RFM_setMode(char* currentMode, char mode, char cs) ;
 
 void RFM_send(char* data, char* currentMode, char length, char cs);
 
-void RFM_setModeIdle(char* currentMode, char cs);
+char Read_FIFO(char* buffer, char* currentMode, char cs);
 
-char Read_FIFO(char* buffer, char cs);
+void RFM_setPowerLevel(char powerLevel, char cs); 
+
+void RFM_setHighPower(char onOff, char cs); 
+
+int RFM_readRSSI(char cs) ; 
+
+char RFM_interruptHandler(char* currentMode, char cs)  ;

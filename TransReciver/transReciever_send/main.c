@@ -45,16 +45,11 @@ int main(int argc, const char * argv[]) {
 	{
 		// serial_outputString(radio.buffer);
 
-		RFM_send(message,radio.currentMode, sizeof(message), radio.slaveSelectPin);
+		RFM_send(message,&radio.currentMode, sizeof(message), radio.slaveSelectPin);
 
 
 		_delay_ms(5000);
 
-		// char buf[10];
-		// int temp = RFM_readRSSI(24);
-
-		// sprintf(buf,temp);
-		// serial_outputString(buf);
 
 
 		// char mess[2] = {0x11, 0x22};

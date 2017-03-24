@@ -50,7 +50,7 @@
 #define REG_VERSION       0x10
 #define REG_PALEVEL       0x11
 #define REG_PARAMP        0x12
-#define REG_OCP           0x13
+#define RF_OCP_OFF           0x13
 #define REG_AGCREF        0x14  // not present on RFM69/SX1231
 #define REG_AGCTHRESH1    0x15  // not present on RFM69/SX1231
 #define REG_AGCTHRESH2    0x16  // not present on RFM69/SX1231
