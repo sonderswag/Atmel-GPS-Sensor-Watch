@@ -282,6 +282,8 @@ struct RFM69
 {
     char slaveSelectPin;
     char currentMode; // if 0 == sleep, 1 == rx, 2 == tx 
+    char buffer[60];
+    char buffer_length; 
 
     
 };
@@ -306,7 +308,12 @@ void RFM_setFrequency(float centre, char cs );
 
 void RFM_setOpMode(char mode, char cs);
 
-char RFM_setModeRx( char currentMode, char cs); 
+void RFM_setModeRx(char* currentMode, char cs); 
 
-char RFM_setModeTx( char currentMode, char cs); 
+void RFM_setModeTx(char* currentMode, char cs); 
 
+void RFM_send(char* data, char* currentMode, char length, char cs);
+
+void RFM_setModeIdle(char* currentMode, char cs);
+
+char Read_FIFO(char* buffer, char cs);

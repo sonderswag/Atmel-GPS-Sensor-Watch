@@ -22,6 +22,8 @@
 // The Frequency Synthesizer step = RH_RF69_FXOSC / 2^^19
 #define RH_RF69_FSTEP  (RH_RF69_FXOSC / 524288)
 
+#define Max_Message_length 60
+
 
 void RFM_init(char cs)
 {
@@ -34,6 +36,7 @@ void RFM_init(char cs)
 
 
 	// Configure important RH_RF69 registers
+	// defaults to fixed packet format 
     // Here we set up the standard packet format for use by the RH_RF69 library:
     // 4 bytes preamble
     // 2 SYNC words 2d, d4
@@ -61,6 +64,50 @@ void RFM_init(char cs)
 
 }
 
+char Read_FIFO(char* buffer, char cs)
+{
+	cli();
+	digitalWrite(cs, 0); 
+	SPI_transfer(RH_RF69_REG_00_FIFO);
+
+	char payload = SPI_transfer(0); //get length of bytes 
+	int buf_len = 0 ; 
+
+	if (payload != 0)
+	{
+		for (buf_len = 0 ; buf_len <payload ; buf_len++)
+		{
+			buffer[buf_len] = SPI_transfer(0); 
+		}
+	}
+
+	digitalWrite(cs, 1); 
+	sei(); 
+
+	return payload; // the length of the message 
+}
+
+void RFM_send(char* data, char* currentMode, char length, char cs)
+{
+	if (length > Max_Message_length)
+	{
+		return ; 
+	}
+
+	cli(); 
+	digitalWrite(cs, 0); 
+	char message[2] = {RH_RF69_REG_00_FIFO | RH_SPI_WRITE_MASK, length};
+	SPI_multiWrite(message,2);
+
+	while(length--)
+	{
+		SPI_transfer(*data++); 
+	}
+	digitalWrite(cs, 1); 
+	sei();
+
+	RFM_setModeTx(currentMode,cs);
+}
 
 void RFM_spiConfig(char cs) 
 {
@@ -100,7 +147,7 @@ void RFM_writeReg(char address, char data, char cs)
 
 	digitalWrite(cs, 0); 
 
-	char message[2] = {address | RH_SPI_WRITE_MASK,data };
+	char message[2] = {address | RH_SPI_WRITE_MASK, data };
 
 	address |= RH_SPI_WRITE_MASK; // putting 1 in MSB 
 	SPI_multiWrite(message,2);
@@ -211,11 +258,11 @@ void RFM_setOpMode(char mode, char cs)
 	
 }
 
-char RFM_setModeRx(char currentMode, char cs)
+void RFM_setModeRx(char* currentMode, char cs)
 {
-	if (currentMode == 1 ) // checking to see if it is already in rx mode 
+	if (*currentMode == 1 ) // checking to see if it is already in rx mode 
 	{
-		return 0; 
+		return ; 
 	}
 
 	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 
@@ -223,14 +270,15 @@ char RFM_setModeRx(char currentMode, char cs)
 
 	RFM_setOpMode(RH_RF69_OPMODE_MODE_RX,cs); 
 
-	return 1 ; // used to set the current mode to rx 
+	*currentMode = 1 ; 
+
 }
 
-char RFM_setModeTx( char currentMode, char cs)
+void RFM_setModeTx(char* currentMode, char cs)
 {
-	if (currentMode == 2) 
+	if (*currentMode == 2) // 
 	{
-		return 0; 
+		return ; 
 	}
 
 	RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_BOOST, cs); // used to boost power to transmitter / reciever 
@@ -238,7 +286,20 @@ char RFM_setModeTx( char currentMode, char cs)
 
 	RFM_setOpMode(RH_RF69_OPMODE_MODE_TX,cs); 
 
-	return 2; 
+	*currentMode = 2; 
+}
 
+void RFM_setModeIdle(char* currentMode, char cs)
+{
+	if (*currentMode == 0) // idle 
+	{
+		return ; 
+	}
+
+	*currentMode = 0; 
+
+	RFM_setOpMode(RH_RF69_OPMODE_MODE_STDBY,cs);
 
 }
+
+
