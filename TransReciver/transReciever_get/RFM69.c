@@ -117,7 +117,7 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 	sei();
 
 	RFM_setMode(currentMode,2,cs); //TX 
-	while(digitalRead(10) == 0) 
+	while(digitalRead(10) == 0) // waiting for the interrupt 
 	{
 		serial_outputString("stuck");
 	}// wait for the flag to say that it is done

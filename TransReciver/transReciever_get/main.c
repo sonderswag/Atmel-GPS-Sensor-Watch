@@ -33,14 +33,10 @@ int main(int argc, const char * argv[]) {
 
 	spi_init_master(); 
 	
-
-
 	RFM_spiConfig(radio.slaveSelectPin) ;
 	RFM_init(radio.slaveSelectPin);
 
 	RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // RX
-
-	
 
 	while (1)
 	{	
@@ -48,11 +44,12 @@ int main(int argc, const char * argv[]) {
 		{
 			radio.receiveDataFlag = 0;
 			radio.buffer_length = Read_FIFO(radio.buffer, radio.slaveSelectPin);
-			RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // RX
-			serial_outputString(radio.buffer);
-			_delay_ms(15000);
+			// have to do this after receiving somehting 
+			RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // set mode to RX
+			serial_outputString(radio.buffer); 
+			_delay_ms(1000);
 		}
-		_delay_ms(5000);
+		_delay_ms(1000);
 
 	}
 
@@ -64,8 +61,10 @@ int main(int argc, const char * argv[]) {
 //pin chagne interrupt for port B 
 ISR(PCINT0_vect)
 {
+	// this pin should change when something has been recieve
 	if (digitalRead(10) == 1)
 	{
+		serial_outputString("got something");
 		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, radio.slaveSelectPin) ;
 	}
 }
