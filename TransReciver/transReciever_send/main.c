@@ -17,9 +17,16 @@
 
 #define Serial_rate 47
 
+void interruptInit()
+{
+	PCICR |= 0x01;
+	PCMSK0 |= 0x80;
+}
 
 int main(int argc, const char * argv[]) {
 
+	interruptInit(); 
+	
 	serial_init(Serial_rate); 
 
 	spi_init_master(); 
@@ -70,4 +77,15 @@ int main(int argc, const char * argv[]) {
 
 
     return 0;
+}
+
+//pin chagne interrupt for port B 
+ISR(PCINT0_vect)
+{
+	serial_outputString("Interrupt");
+	// this pin should change when something has been recieve
+	if (digitalRead(10) == 1)
+	{
+		serial_outputString("Interrupt");
+	}
 }

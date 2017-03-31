@@ -109,7 +109,7 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 
 	while(length--)
 	{
-		serial_out(*data);
+		// serial_out(*data);
 		SPI_transfer(*data++); 
 
 	}
@@ -117,10 +117,10 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 	sei();
 
 	RFM_setMode(currentMode,2,cs); //TX 
-	while(digitalRead(10) == 0) 
-	{
-		serial_outputString("stuck");
-	}// wait for the flag to say that it is done
+	// while(digitalRead(10) == 0) 
+	// {
+	// 	serial_outputString("stuck");
+	// }// wait for the flag to say that it is done
 	serial_outputString(" !!!Packet Sent!!! ");
 
 

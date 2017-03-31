@@ -97,7 +97,7 @@ char digitalRead(char port)
     {
         if (port == 1)
         {
-            if (PORTC & 1<<6 == 0)
+            if (PINC & 1<<6 == 0)
                 return 0; 
             else 
                 return 1; 
@@ -105,7 +105,7 @@ char digitalRead(char port)
         else
         {
             port -= 23;
-            if (PORTC & 1<<port == 0) return 0; 
+            if (PINC & 1<<port == 0) return 0; 
 
             else return 1;
 
@@ -117,7 +117,7 @@ char digitalRead(char port)
         
         else  port -= 6;
         
-        if ( PORTD & 1<<port == 0) return 0;
+        if ( PIND & 1<<port == 0) return 0;
 
         else return 1; 
 
@@ -129,7 +129,7 @@ char digitalRead(char port)
         else port -= 14;
 
         
-        if (PORTB & 1<<port == 0) return 0;
+        if (PINB & 1<<port == 0) return 0;
 
         else return 1;
     }

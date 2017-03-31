@@ -20,8 +20,15 @@
 
 struct RFM69 radio; 
 
+void interruptInit()
+{
+	PCICR |= 0x01;
+	PCMSK0 |= 0x80;
+}
 
 int main(int argc, const char * argv[]) {
+	
+	interruptInit();
 	radio.slaveSelectPin = 24; 
 	radio.currentMode = 0; 
 	radio.buffer_length = 0;
@@ -43,13 +50,15 @@ int main(int argc, const char * argv[]) {
 		if (radio.receiveDataFlag)
 		{
 			radio.receiveDataFlag = 0;
-			radio.buffer_length = Read_FIFO(radio.buffer, radio.slaveSelectPin);
+			radio.buffer_length = Read_FIFO(radio.buffer,&radio.currentMode, radio.slaveSelectPin);
 			// have to do this after receiving somehting 
 			RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // set mode to RX
 			serial_outputString(radio.buffer); 
 			_delay_ms(1000);
 		}
 		_delay_ms(1000);
+		// radio.buffer_length = Read_FIFO(radio.buffer,&radio.currentMode, radio.slaveSelectPin);
+		// RFM_printMode(radio.slaveSelectPin);
 
 	}
 
@@ -61,6 +70,7 @@ int main(int argc, const char * argv[]) {
 //pin chagne interrupt for port B 
 ISR(PCINT0_vect)
 {
+	serial_outputString("got something");
 	// this pin should change when something has been recieve
 	if (digitalRead(10) == 1)
 	{

@@ -67,7 +67,7 @@ void RFM_init(char cs)
 char Read_FIFO(char* buffer, char* currentMode, char cs)
 {
 	cli();
-	RFM_setMode(currentMode,0,cs); // set to idle
+	// RFM_setMode(currentMode,0,cs); // set to idle
 	digitalWrite(cs, 0); 
 	SPI_transfer(RH_RF69_REG_00_FIFO);
 
@@ -76,7 +76,7 @@ char Read_FIFO(char* buffer, char* currentMode, char cs)
 
 	if (payload != 0)
 	{
-		for (buf_len = 0 ; buf_len <payload ; buf_len++)
+		for (buf_len = 0 ; buf_len < payload ; buf_len++)
 		{
 			buffer[buf_len] = SPI_transfer(0); 
 		}
@@ -302,6 +302,14 @@ void RFM_modeSetter(char mode, char cs)
     // Wait for mode to change. this could cause problems 
     // while (!(RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & RH_RF69_IRQFLAGS1_MODEREADY));
 	
+}
+
+void RFM_printMode(char cs)
+{
+	char mode; 
+	mode = RFM_readReg(RH_RF69_REG_01_OPMODE,cs);
+	serial_outputString(mode);
+	serial_outputString(" \n");
 }
 
 void RFM_setMode(char* currentMode, char mode, char cs)
