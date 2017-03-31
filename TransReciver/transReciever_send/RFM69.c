@@ -87,26 +87,27 @@ char Read_FIFO(char* buffer, char* currentMode, char cs)
 	return payload; // the length of the message 
 }
 
-void RFM_send(char* data, char* currentMode, char length, char cs)
+void RFM_send(char* data, char* currentMode, char length, char cs, volatile char* packet_sent)
 {
+	
 	if (length > Max_Message_length)
 	{
 		return ; 
 	}
 
 	cli(); 
-
+	 
 	RFM_setMode(currentMode,0,cs); // set mode to idle 
-
-	while (RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & 0x80 == 0x00)
+	while ( (RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & 0x80) == 0x00)
 	{
-		serial_outputString("stuck loop 1");
+// 		serial_outputString("stuck loop 1");
 	} // wait for ModeReady in idle 
-
+	
 	digitalWrite(cs, 0); 
 	char message[2] = {RH_RF69_REG_00_FIFO | RH_SPI_WRITE_MASK, length};
+	
 	SPI_multiWrite(message,2);
-
+	
 	while(length--)
 	{
 		// serial_out(*data);
@@ -114,17 +115,20 @@ void RFM_send(char* data, char* currentMode, char length, char cs)
 
 	}
 	digitalWrite(cs, 1); 
+	
 	sei();
-
+	
 	RFM_setMode(currentMode,2,cs); //TX 
-	// while(digitalRead(10) == 0) 
-	// {
-	// 	serial_outputString("stuck");
-	// }// wait for the flag to say that it is done
+	
+	while ((RFM_readReg(RH_RF69_REG_01_OPMODE, cs) & 0x1C) != 0x04)
+	{}
+	
+	
+
 	serial_outputString(" !!!Packet Sent!!! ");
 
 
-	RFM_setMode(currentMode,0,cs); // set to idle
+	
 }
 
 char RFM_interruptHandler(char* currentMode, char cs) 
@@ -209,12 +213,14 @@ char RFM_readReg(char address, char cs)
 	digitalWrite(cs, 0);
 	address &= ~RH_SPI_WRITE_MASK; // putting 0 in MSB
 
-	char message[] = {address, 0x00};
-	SPI_multiTransfer(message,2); 
+// 	char message[] = {address, 0x00};
+	SPI_transfer(address); 
+	char new = SPI_transfer(0x00); 
+// 	SPI_multiTransfer(message,2); 
 
 	digitalWrite(cs, 1);
 	sei(); 
-	return message[1] ; 
+	return new ; 
 }
 
 

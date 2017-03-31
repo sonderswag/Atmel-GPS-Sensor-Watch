@@ -285,7 +285,7 @@ struct RFM69
     char buffer[60];
     char buffer_length;
     char receiveDataFlag; 
-
+	volatile char packet_sent; 
     
 };
 
@@ -311,7 +311,7 @@ void RFM_modeSetter(char mode, char cs);
 
 void RFM_setMode(char* currentMode, char mode, char cs) ;
 
-void RFM_send(char* data, char* currentMode, char length, char cs);
+void RFM_send(char* data, char* currentMode, char length, char cs, volatile char * packet_sent);
 
 char Read_FIFO(char* buffer, char* currentMode, char cs);
 

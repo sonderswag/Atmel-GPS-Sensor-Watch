@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <util/delay.h>
 #include <avr/io.h> 
+#include <avr/interrupt.h>
 
 #include "DigitalIo.h"
 #include "RFM69.h"
@@ -19,21 +20,30 @@
 
 void interruptInit()
 {
-	PCICR |= 0x01;
+	DDRD &= ~(1 <<DDD2) ; 
+	PORTD |= (1<<PORTD2); 
+	EICRA |= (1<<ISC00) | (1<<ISC01); // set it for rising edge 
+	EIMSK |= (1 << INT0); 
+	sei(); 
 	PCMSK0 |= 0x80;
 }
 
-int main(int argc, const char * argv[]) {
+struct RFM69 radio; 
 
+	
+int main(int argc, const char * argv[]) {
+	
+	radio.slaveSelectPin = 24; 
+	radio.currentMode = 0; 
+	radio.buffer_length = 0;
+	radio.packet_sent = 0; 
+	
 	interruptInit(); 
 	
 	serial_init(Serial_rate); 
 
 	spi_init_master(); 
-	struct RFM69 radio; 
-	radio.slaveSelectPin = 24; 
-	radio.currentMode = 0; 
-	radio.buffer_length = 0;
+	
 
 
 	RFM_spiConfig(radio.slaveSelectPin) ;
@@ -52,10 +62,10 @@ int main(int argc, const char * argv[]) {
 	{
 		// serial_outputString(radio.buffer);
 
-		RFM_send(message,&radio.currentMode, sizeof(message), radio.slaveSelectPin);
+		RFM_send(message,&radio.currentMode, sizeof(message), radio.slaveSelectPin, &radio.packet_sent);
 
 
-		_delay_ms(5000);
+		_delay_ms(1);
 
 
 
@@ -80,12 +90,10 @@ int main(int argc, const char * argv[]) {
 }
 
 //pin chagne interrupt for port B 
-ISR(PCINT0_vect)
+ISR(INT0_vect)
 {
-	serial_outputString("Interrupt");
+	serial_outputString("I ");
+	RFM_setMode(&radio.currentMode,0,radio.slaveSelectPin); // set to idle
 	// this pin should change when something has been recieve
-	if (digitalRead(10) == 1)
-	{
-		serial_outputString("Interrupt");
-	}
+
 }
