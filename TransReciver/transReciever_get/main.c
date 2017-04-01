@@ -1,6 +1,6 @@
 //
 //  main.c
-//  transReciever
+//  transReciever:: GET
 //
 //  Created by Christian Wagner on 3/9/17.
 //  Copyright © 2017 Christian Wagner. All rights reserved.
@@ -11,10 +11,10 @@
 #include <avr/io.h> 
 #include <avr/interrupt.h>
 
-#include "DigitalIo.h"
-#include "RFM69.h"
-#include "SPI_control.h"
-#include "serial.h"
+#include "../../Digital_IO/DigitalIo.h"
+#include "../..//RFM/RFM69.h"
+#include "../..//SPI/SPI_control.h"
+#include "../../Serial/serial.h"
 
 #define Serial_rate 47
 
@@ -22,26 +22,31 @@ struct RFM69 radio;
 
 void interruptInit()
 {
-	PCICR |= 0x01;
+	DDRD &= ~(1 <<DDD2) ; 
+	PORTD |= (1<<PORTD2); 
+	EICRA |= (1<<ISC00) | (1<<ISC01); // set it for rising edge 
+	EIMSK |= (1 << INT0); 
+	sei(); 
 	PCMSK0 |= 0x80;
 }
 
 int main(int argc, const char * argv[]) {
 	
-	interruptInit();
+	// Initalize --------------------------------------------------------
+	interruptInit();  // Interrupts
+	serial_init(Serial_rate); //Serial 
+	spi_init_master(); // SPI 
+	
+	// Radio Initalize and constants 
 	radio.slaveSelectPin = 24; 
 	radio.currentMode = 0; 
 	radio.buffer_length = 0;
-	radio.receiveDataFlag = 0;
-	
-	sei(); 
-
-	serial_init(Serial_rate); 
-
-	spi_init_master(); 
+	radio.packet_sent = 0; 	
 	
 	RFM_spiConfig(radio.slaveSelectPin) ;
 	RFM_init(radio.slaveSelectPin);
+
+	//--------------------------------------------------------
 
 	RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // RX
 
@@ -67,14 +72,11 @@ int main(int argc, const char * argv[]) {
     return 0;
 }
 
-//pin chagne interrupt for port B 
-ISR(PCINT0_vect)
+//Hardware interrupt
+ISR(INT0_vect)
 {
-	serial_outputString("got something");
-	// this pin should change when something has been recieve
-	if (digitalRead(10) == 1)
-	{
-		serial_outputString("got something");
+	serial_outputString("I ");
+
 		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, radio.slaveSelectPin) ;
-	}
+
 }

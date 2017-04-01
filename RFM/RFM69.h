@@ -284,7 +284,7 @@ struct RFM69
     char currentMode; // if 0 == sleep, 1 == rx, 2 == tx 
     char buffer[60];
     char buffer_length;
-    char receiveDataFlag; 
+    volatile char receiveDataFlag; 
 	volatile char packet_sent; 
     
 };

@@ -11,7 +11,7 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include "SPI_control.h"
-#include "DigitalIo.h"
+#include "../Digital_IO/DigitalIo.h"
 
 
 // Initialize SPI Master Device (with SPI interrupt)

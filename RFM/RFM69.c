@@ -9,8 +9,8 @@
 #include <avr/interrupt.h>
 
 #include <stdio.h>
-#include "SPI_control.h"
-#include "DigitalIo.h"
+#include "../SPI/SPI_control.h"
+#include "../Digital_IO/DigitalIo.h"
 #include "RFM69.h"
 
 //radio reset pin
@@ -133,10 +133,10 @@ void RFM_send(char* data, char* currentMode, char length, char cs, volatile char
 
 char RFM_interruptHandler(char* currentMode, char cs) 
 {
-	serial_outputString("interrupt handeler");
+	// serial_outputString("interrupt handeler");
 	if (*currentMode == 1 && (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2,cs) & 0x04))
 	{
-		serial_outputString("new data ");
+		// serial_outputString("new data ");
 		return 1;
 	}
 	else 
