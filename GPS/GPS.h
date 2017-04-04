@@ -16,8 +16,9 @@ struct GPS
     // and minutes stored in units of 1/100000 degrees.  See pull #13 for more details:
     //   https://github.com/adafruit/Adafruit-GPS-Library/pull/13
     int32_t latitude_fixed, longitude_fixed;
-    int latitudeDegrees, longitudeDegrees; // note need to divide by .0001 for the agnel 
-    float geoidheight, altitude;
+    int latitudeDegrees_front, longitudeDegrees_front;
+    int latitudeDegrees_back, longitudeDegrees_back; // note need to divide by .0001 for the agnel 
+    int altitude_front, altitude_back;
     float speed, angle, magvariation, HDOP;
     char lat, lon, mag;
    
