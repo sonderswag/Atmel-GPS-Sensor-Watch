@@ -59,9 +59,8 @@ int main(int argc, const char * argv[]) {
 			// have to do this after receiving somehting 
 			RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // set mode to RX
 			serial_outputString(radio.buffer); 
-			_delay_ms(1000);
 		}
-		_delay_ms(1000);
+		_delay_ms(2);
 		// radio.buffer_length = Read_FIFO(radio.buffer,&radio.currentMode, radio.slaveSelectPin);
 		// RFM_printMode(radio.slaveSelectPin);
 
@@ -75,7 +74,7 @@ int main(int argc, const char * argv[]) {
 //Hardware interrupt
 ISR(INT0_vect)
 {
-	serial_outputString("I ");
+	// serial_outputString("I ");
 
 		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, radio.slaveSelectPin) ;
 

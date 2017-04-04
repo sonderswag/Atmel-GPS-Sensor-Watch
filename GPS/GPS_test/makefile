@@ -1,7 +1,7 @@
 DEVICE     = atmega328p
 CLOCK      = 7372800
 PROGRAMMER = -c usbtiny -P usb
-OBJECTS    = Serial_test.o
+OBJECTS    = main.o ../../Serial/Serial.o ../GPS.o
 FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0xe0:m
 
 # Fuse Low Byte = 0xe0   Fuse High Byte = 0xd9   Fuse Extended Byte = 0xff

@@ -8,12 +8,12 @@
 
 #ifndef SPI_control_h
 #define SPI_control_h
-
+#endif /* SPI_control_h */
 #include <stdio.h>
 #include <avr/io.h>
 #include <stdint.h>
 
-#endif /* SPI_control_h */
+
 
 // default clock is div 16 
 #define SPI_CLOCK_DIV4 0x00

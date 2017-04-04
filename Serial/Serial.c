@@ -29,5 +29,7 @@ void serial_outputString (char* in)
 	{
 		serial_out(in[i]);
 	}
+	serial_out(0x0D);
+    serial_out(0x0A);
 }
 
