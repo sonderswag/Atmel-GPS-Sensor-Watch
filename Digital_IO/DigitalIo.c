@@ -97,7 +97,7 @@ char digitalRead(char port)
     {
         if (port == 1)
         {
-            if (PINC & 1<<6 == 0)
+            if ((PINC & 1<<6) == 0)
                 return 0; 
             else 
                 return 1; 
@@ -133,5 +133,5 @@ char digitalRead(char port)
 
         else return 1;
     }
-
+    return 2; // if something went wrong
 }

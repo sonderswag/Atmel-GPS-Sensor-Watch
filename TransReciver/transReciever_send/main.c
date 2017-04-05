@@ -58,7 +58,7 @@ int main(int argc, const char * argv[]) {
 	{
 		// serial_outputString(radio.buffer);
 
-		RFM_send(message,&radio.currentMode, sizeof(message), radio.slaveSelectPin, &radio.packet_sent);
+		RFM_send(message,&radio.currentMode);
 
 
 		_delay_ms(1);
@@ -73,7 +73,7 @@ int main(int argc, const char * argv[]) {
 ISR(INT0_vect)
 {
 	serial_outputString("I ");
-	RFM_setMode(&radio.currentMode,0,radio.slaveSelectPin); // set to idle
-	// this pin should change when something has been recieve
+	RFM_setMode(&radio.currentMode,0); // set to idle, needs to do this in order to know the package was sent. 
+
 
 }

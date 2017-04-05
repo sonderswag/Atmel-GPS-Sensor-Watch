@@ -8,7 +8,7 @@
 
 #ifndef SPI_control_h
 #define SPI_control_h
-#endif /* SPI_control_h */
+
 #include <stdio.h>
 #include <avr/io.h>
 #include <stdint.h>
@@ -57,3 +57,6 @@ void SPI_setBitOrder(char bitOrder) ;
 // This function is deprecated.  New applications should use
 // beginTransaction() to configure SPI settings.
 void SPI_setClockDivider(char clockDiv) ;
+
+
+#endif /* SPI_control_h */

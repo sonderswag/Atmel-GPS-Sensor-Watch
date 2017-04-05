@@ -201,8 +201,6 @@ void GPS_readSerialInput(struct GPS* gps)
 void GPS_printInfo(struct GPS* gps)
 {
     char buffer[50]; 
-
-
     sprintf(buffer, "Log %d log_deg %d.%d", gps->longitude, gps->longitudeDegrees_front, gps->longitudeDegrees_back);
     serial_outputString(buffer); 
     sprintf(buffer, "Lat %d lat_deg %d.%d", gps->latitude, gps->latitudeDegrees_front, gps->latitudeDegrees_back); 
