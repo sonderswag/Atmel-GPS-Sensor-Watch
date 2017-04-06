@@ -34,9 +34,17 @@
 #define SSD1306_HEIGHT 64
 #define SSD1306_BUFFERSIZE (SSD1306_WIDTH*SSD1306_HEIGHT)/8
 
+struct Screen
+{
+	char buffer[1024]; 
+};
 
 void screen_sendCommand(uint8_t command); 
 
 void screen_init(); 
+void screen_drawPixel(char pos_x, char pos_y, char status, char* buffer); 
+void screen_drawHLine(char x, char y, char length, char* buffer); 
+void screen_invert(char inverted);
+void screen_sendBuffer(char* buffer);
 
 #endif 
