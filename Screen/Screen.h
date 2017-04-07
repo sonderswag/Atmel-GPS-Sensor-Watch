@@ -49,5 +49,8 @@ void screen_sendBuffer(char* buffer);
 void screen_drawVLine(char x, char y, char length, char* buffer);
 void screen_drawRectangle(char x1, char y1, char x2, char y2, char* buffer);
 void screen_drawFillRectangle(char x1, char y1, char x2, char y2, char status, char* buffer); 
-
+void screen_drawCircle(char x0, char y0, char r, char status, char* buffer);
+void screen_drawFillCircle(char x0, char y0, char r, char status, char* buffer);
+void screen_drawChar(unsigned char pos_x, unsigned char pos_y, unsigned char letter, uint8_t *buff);
+void screen_drawString(unsigned char pos_x, unsigned char pos_y, char *string, uint8_t *buff); 
 #endif 

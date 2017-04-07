@@ -1,9 +1,11 @@
 
 #include "Screen.h"
 #include "../I2C/I2C.h"
+#include "../Digital_IO/DigitalIo.h"
+#include "fonts.h"
 #include <stdio.h>
 #include <stdint.h>
-#include <math> 
+
 
 void screen_init()
 {
@@ -53,6 +55,8 @@ void screen_init()
 
     // Turn display back on
     screen_sendCommand(SSD1306_DISPLAYON);
+
+   
 
 }
 
@@ -123,7 +127,45 @@ void screen_drawFillRectangle(char x1, char y1, char x2, char y2, char status, c
     }
 }
 
+void screen_drawCircle(char x0, char y0, char r, char status, char* buffer)
+{
+    char x = r ;
+    char y = 0; 
+    char err = 0; 
+    while (x >= y)
+    {
+        screen_drawPixel(x0+x,y0+y,status,buffer); 
+        screen_drawPixel(x0+y,y0+x,status,buffer);
+        screen_drawPixel(x0-y,y0+x,status,buffer);  
+        screen_drawPixel(x0-x,y0+y,status,buffer); 
+        screen_drawPixel(x0-x,y0-y,status,buffer); 
+        screen_drawPixel(x0-y,y0-x,status,buffer); 
+        screen_drawPixel(x0+y,y0-x,status,buffer);
+        screen_drawPixel(x0+x,y0-y,status,buffer); 
 
+        if (err <= 0)
+        {
+            y += 1;
+            err += 2*y +1;
+        } 
+        if (err > 0)
+        {
+            x -= 1; 
+            err -=2*x+1;
+        }
+    }
+}
+
+void screen_drawFillCircle(char x0, char y0, char r, char status, char* buffer)
+{
+    char radius = r ; 
+    while (radius > 0)
+    {
+        screen_drawCircle(x0,y0,radius,status,buffer); 
+        radius--;
+    }
+
+}
 
 void screen_invert(char inverted)
 {
@@ -142,15 +184,38 @@ void screen_clear(char* buffer)
     memset(buffer,0,1024);
 }
 
+void screen_drawChar(unsigned char pos_x, unsigned char pos_y, 
+    unsigned char letter, uint8_t *buff)
+{
+    char page = (pos_y/8); 
+
+    uint8_t ascii_offset = 32;
+    char i ;
+    for(i = 0; i < 5; i++)
+    {
+        buff[i+((page*128)+pos_x)] = Ascii_1[letter-ascii_offset][i];
+    }
+}
+
+void screen_drawString(unsigned char pos_x, unsigned char pos_y, char *string, uint8_t *buff)
+{
+    uint8_t i = 0;
+    while(string[0] != 0){
+        screen_drawChar(pos_x+(5*i), (pos_y/8), (string[0]), buff);
+        string++;
+        i++;
+    }
+}
+
 void screen_sendBuffer(char* buffer)
 {
     screen_sendCommand(SSD1306_COLUMNADDR); //set the coloumb current address to 00 
     screen_sendCommand(0x00); //saying this is a command 
-    screen_sendCommand(0x7F); //reset contrast value 
+    screen_sendCommand(0x7F); //line end address
 
     screen_sendCommand(SSD1306_PAGEADDR); //this set's the page address t0 00
-    screen_sendCommand(0x00);
-    screen_sendCommand(0x07);
+    screen_sendCommand(0x00); //page start address
+    screen_sendCommand(0x07); //page end address
 
     // We have to send the buffer as 16 bytes packets
     // Our buffer is 1024 bytes long, 1024/16 = 64
