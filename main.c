@@ -81,7 +81,7 @@ int main(int argc, const char **argv)
 		PORTC |= 1 << PC0;      // Set PC0 to a 1
 		PORTC &= ~(1 << PC0);   // Set PC0 to a 0
 		
-		readSerialInput(serial_in(), &gps); 	// reading serial input
+		GPS_readSerialInput(&gps); 			// reading serial input
 		serial_out((char) gps.latitude); 	// print out serial values of char
 		
 		// sending the char through the RFM69
@@ -94,11 +94,8 @@ int main(int argc, const char **argv)
 
 // hardware interrupts, if needed
 
-/*
 ISR(INT0_vect) {
 	serial_outputString("I ");
 	// sets to idle, which is needed to know which packet was sent
 	radio.packet_sent = RFM_interruptHandler(&radio.currentMode);
 }
-*/
-
