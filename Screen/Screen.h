@@ -46,5 +46,8 @@ void screen_drawPixel(char pos_x, char pos_y, char status, char* buffer);
 void screen_drawHLine(char x, char y, char length, char* buffer); 
 void screen_invert(char inverted);
 void screen_sendBuffer(char* buffer);
+void screen_drawVLine(char x, char y, char length, char* buffer);
+void screen_drawRectangle(char x1, char y1, char x2, char y2, char* buffer);
+void screen_drawFillRectangle(char x1, char y1, char x2, char y2, char status, char* buffer); 
 
 #endif 

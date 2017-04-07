@@ -22,24 +22,29 @@ int main(int argc, const char * argv[]) {
 	digitalWrite(25,0);
 	digitalWrite(25,1);
 	screen_init(); 
-	screen_drawHLine(2,2,120,screen.buffer);
-	screen_drawHLine(2,20,120,screen.buffer);
-	screen_drawPixel(50,50,1,screen.buffer);
+	screen_clear(screen.buffer);
+	// screen_sendBuffer(screen.buffer);
+
+	// screen_drawHLine(2,2,120,screen.buffer);
+	// screen_drawHLine(2,20,120,screen.buffer);
+	// screen_drawPixel(50,50,1,screen.buffer);
+	screen_drawRectangle(19,19,51,50,screen.buffer); 
+	screen_drawFillRectangle(20,20,50,50,1,screen.buffer); 
 	// screen_drawHLine(2,40,100,screen.buffer);
+
+	
 	screen_sendBuffer(screen.buffer);
 
 
 	while (1)
 	{
-		// serial_outputString(radio.buffer);
-		// screen_drawHLine(2,40,100,screen.buffer);
-		// screen_drawHLine(2,20,100,screen.buffer);
+		screen_drawFillRectangle(20,20,50,50,1,screen.buffer); 
 		screen_sendBuffer(screen.buffer);
 		_delay_ms(1000);
 
-		// screen_invert(1);
-
-		// _delay_ms(1);
+		screen_drawFillRectangle(20,20,50,50,0,screen.buffer); 
+		screen_sendBuffer(screen.buffer);
+		_delay_ms(1000);
 
 
 	}

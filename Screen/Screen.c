@@ -3,6 +3,7 @@
 #include "../I2C/I2C.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <math> 
 
 void screen_init()
 {
@@ -52,6 +53,7 @@ void screen_init()
 
     // Turn display back on
     screen_sendCommand(SSD1306_DISPLAYON);
+
 }
 
 void screen_sendCommand(uint8_t command)
@@ -87,6 +89,42 @@ void screen_drawHLine(char x, char y, char length, char* buffer)
     }
 }
 
+void screen_drawVLine(char x, char y, char length, char* buffer)
+{
+    uint8_t i = 0; 
+    for (i = 0 ; i < length; i++)
+    {
+        screen_drawPixel(x,y+i,1,buffer); 
+    }
+}
+
+void screen_drawRectangle(char x1, char y1, char x2, char y2, char* buffer)
+{
+    char length = x2-x1 + 1;
+    char height = y2-y1; 
+    screen_drawHLine(x1,y1,length,buffer);
+    screen_drawHLine(x1,y2,length,buffer);
+    screen_drawVLine(x1,y1,height,buffer);
+    screen_drawVLine(x2,y1,height,buffer); 
+}
+
+void screen_drawFillRectangle(char x1, char y1, char x2, char y2, char status, char* buffer)
+{
+    char length = x2-x1 + 1;
+    char height = y2-y1; 
+
+    char x,y; 
+    for (x = 0 ; x < length; ++x)
+    {
+        for (y = 0 ; y < height ; ++y)
+        {
+            screen_drawPixel(x1+x,y1+y,status,buffer); 
+        }
+    }
+}
+
+
+
 void screen_invert(char inverted)
 {
     if (inverted)
@@ -98,6 +136,12 @@ void screen_invert(char inverted)
         screen_sendCommand(SSD1306_NORMALDISPLAY);
     }
 }
+
+void screen_clear(char* buffer)
+{
+    memset(buffer,0,1024);
+}
+
 void screen_sendBuffer(char* buffer)
 {
     screen_sendCommand(SSD1306_COLUMNADDR); //set the coloumb current address to 00 
