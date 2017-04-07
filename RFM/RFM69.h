@@ -320,4 +320,4 @@ void RFM_setHighPower(char onOff);
 
 int RFM_readRSSI() ; 
 
-// char RFM_interruptHandler(char* currentMode)  ;
+char RFM_interruptHandler(char* currentMode)  ;

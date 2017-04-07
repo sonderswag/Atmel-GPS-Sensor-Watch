@@ -73,7 +73,7 @@ int main(int argc, const char * argv[]) {
 ISR(INT0_vect)
 {
 	serial_outputString("I ");
-	RFM_setMode(&radio.currentMode,0); // set to idle, needs to do this in order to know the package was sent. 
+	radio.packet_sent = RFM_interruptHandler(&radio.currentMode); // set to idle, needs to do this in order to know the package was sent. 
 
 
 }

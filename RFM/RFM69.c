@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include "../SPI/SPI_control.h"
 #include "../Digital_IO/DigitalIo.h"
+#include "../Serial/serial.h"
 #include "RFM69.h"
 
 //radio reset pin
@@ -99,16 +100,20 @@ char RFM_Read_FIFO(char* buffer, char* currentMode)
 
 char RFM_recieve(struct RFM69* radio)
 {
-	RFM_setMode(&(radio->currentMode),1); // set mode to RX 
+	
 	if (radio->receiveDataFlag)
 	{
+		// serial_outputString("got");
 		radio->receiveDataFlag = 0;
+		// char buf[60];
 		radio->buffer_length = RFM_Read_FIFO(radio->buffer, &(radio->currentMode)); //getting the length of the message 
-		return 0; // Note that the mode will be in idle at the end 
+		RFM_setMode(&(radio->currentMode),1); // set mode to RX 
+		// serial_outputString(buf);
+		return 1; // Note that the mode will be in idle at the end 
 	}
 	else 
 	{
-		return 1; 
+		return 0; 
 	}
 }
 
@@ -162,19 +167,24 @@ void RFM_send(char* data, char* currentMode)
 }
 
 
-// char RFM_interruptHandler(char* currentMode) 
-// {
-// 	// serial_outputString("interrupt handeler");
-// 	if (*currentMode == 1 && (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2,cs) & 0x04))
-// 	{
-// 		// serial_outputString("new data ");
-// 		return 1;
-// 	}
-// 	else 
-// 	{
-// 		return 0;
-// 	}
-// }
+char RFM_interruptHandler(char* currentMode) 
+{
+	// serial_outputString("interrupt handeler");
+	if (*currentMode == 1 && (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2) & 0x04))
+	{
+		// serial_outputString("new data ");
+		return 1;
+	}
+	else if (*currentMode == 1)//transmit 
+	{
+		RFM_setMode(&radio.currentMode,0);
+		return 1; 
+	}
+	else 
+	{
+		return 0;
+	}
+}
 
 /* This function configures the SPI communication for the radio 
 
