@@ -55,12 +55,11 @@ int main(int argc, const char * argv[]) {
 		// need this if case for reading the data
 		if (radio.receiveDataFlag)
 		{
+			// need these three functions in this order to work. 
 			radio.receiveDataFlag = 0; //reset the flag 
 			radio.buffer_length = Read_FIFO(radio.buffer,&radio.currentMode, radio.slaveSelectPin);
 			// have to do this after receiving somehting 
 			RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // set mode to RX
-
-
 
 			serial_outputString(radio.buffer); 
 		}

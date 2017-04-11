@@ -74,8 +74,6 @@ ISR(INT0_vect)
 {
 	serial_outputString("I ");
 	// set to idle
-	// RFM_setMode(&radio.currentMode,0,radio.slaveSelectPin); // set to idle
 	radio.packet_sent = RFM_interruptHandler(&radio.currentMode,radio.slaveSelectPin);
-	// this pin should change when something has been recieve
 
 }
