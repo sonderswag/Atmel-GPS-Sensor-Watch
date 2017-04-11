@@ -15,38 +15,11 @@
 #include "../Serial/serial.h"
 
 
-void GPS_parseLocation(const char* latitude, const char* dirNS,
-                   const char* longitude, const char* dirEW,
-                   struct GPS* gps)
-{
-   
-    // strncpy(lat, &(latitude[2]),7);
-    // gps->latitudeDegrees = atof(lat);
-    
-    // // checking to see if it is south. if so then should be -
-    // if (strcmp(dirNS,"S") == 0)
-    // {
-    //     gps->latitude *= -1.0;
-    // }
-    
-    // char lon[9];
-    // strncpy(lon, longitude, 3);
-    // gps->longitude = atof(lon);
-    
-    // strncpy(lon, &(longitude[3]),7);
-    // gps->longitudeDegrees = atof(lon);
-    
-    // if (strcmp(dirEW,"W") == 0)
-    // {
-    //     gps->longitude *= -1.0;
-    // }
-}
+
+
 
 char GPS_parse(struct GPS* gps)
 {
-
-
-
     char* split;
     char* splitString[14];
     char i = 0 ;
@@ -97,13 +70,11 @@ char GPS_parse(struct GPS* gps)
 
     //  ------------------- Parse Location ---------------------- 
     char lat[3] = {splitString[1][0], splitString[1][1]};
-    char lat_deg_front[3] = {splitString[1][2],splitString[1][3]};
-    char lat_deg_back[5] = {splitString[1][5],splitString[1][6],splitString[1][7],splitString[1][8]}; 
 
-
-    gps->latitudeDegrees_back = atoi(lat_deg_back); 
-    gps->latitudeDegrees_front = atoi(lat_deg_front); // note need to divide by .0001 for the agnel 
-    gps->latitude = atoi(lat);
+    char degrees = atoi(lat); 
+    float minutes = atof(&(splitString[1][2])); 
+    minutes = minutes/60 ;
+    gps->latitude = degrees+minutes;
 
 
     if (strcmp(splitString[2],"S") == 0) // S
@@ -113,16 +84,11 @@ char GPS_parse(struct GPS* gps)
 
 
     char log[4] = {splitString[3][0], splitString[3][1], splitString[3][2]};
-    char log_deg_front[3] = {splitString[3][3],splitString[3][4]};
-    char log_deg_back[5]  = {splitString[3][6],splitString[3][7],splitString[3][8], splitString[3][9]}; 
 
-    
-    gps->longitudeDegrees_front = atoi(log_deg_front); 
-    gps->longitudeDegrees_back = atoi(log_deg_back);
-    gps->longitude = atoi(log);
-
-    // serial_outputString(log_deg);
-    // serial_outputString(splitString[4]);
+    degrees = atoi(log); 
+    minutes = atof(&(splitString[3][3])); 
+    minutes = minutes/60 ;
+    gps->longitude = degrees+minutes; 
 
     if (strcmp(splitString[4],"W") == 0) //W 
     {
@@ -130,8 +96,7 @@ char GPS_parse(struct GPS* gps)
     }
 
 
-    gps->altitude_front = atoi(strtok(splitString[8],"."));
-    gps->altitude_back = atoi(strtok(NULL,".")) ;
+    gps->altitude = atof(splitString[8]); 
 
     // GPS_printInfo(gps); 
     return 0;
@@ -187,7 +152,7 @@ void GPS_readSerialInput(struct GPS* gps)
                 
             }
         }
-        serial_outputString(gps->buffer); 
+        // serial_outputString(gps->buffer); 
 
         GPS_parse(gps); 
    
@@ -201,13 +166,17 @@ void GPS_readSerialInput(struct GPS* gps)
 void GPS_printInfo(struct GPS* gps)
 {
     char buffer[50]; 
-    sprintf(buffer, "Log %d log_deg %d.%d", gps->longitude, gps->longitudeDegrees_front, gps->longitudeDegrees_back);
-    serial_outputString(buffer); 
-    sprintf(buffer, "Lat %d lat_deg %d.%d", gps->latitude, gps->latitudeDegrees_front, gps->latitudeDegrees_back); 
-    serial_outputString(buffer); 
-    sprintf(buffer, "hour %d, min %d, sec %d", gps->hour, gps->minute, gps->seconds);
-    serial_outputString(buffer); 
-    sprintf(buffer, "Altitude %d.%d", gps->altitude_front, gps->altitude_back);
+
+    FloatToStringNew(buffer,gps->latitude , 6); 
+    serial_outputString("latitude: ");
+    serial_outputString(buffer);
+
+    FloatToStringNew(buffer,gps->longitude , 6); 
+    serial_outputString("longitude: ");
+    serial_outputString(buffer);
+
+    FloatToStringNew(buffer,gps->altitude , 1); 
+    serial_outputString("Altitude: ");
     serial_outputString(buffer);
 
 }
