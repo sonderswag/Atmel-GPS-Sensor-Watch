@@ -277,7 +277,7 @@ last byte transfer.
 
 */ 
 
-#define cs 24
+
 struct RFM69
 {
     char slaveSelectPin;
@@ -289,35 +289,36 @@ struct RFM69
     
 };
 
-void RFM_init(); 
+void RFM_init(char cs); 
 
-char RFM_Read_FIFO(char* buffer, char* currentMode);
+void RHFM_setPreambleLength(uint16_t bytes, char cs); 
 
-char RFM_recieve(struct RFM69* radio);
+void RFM_setSyncWords(char* syncwords, char cs);
 
-void RHFM_setPreambleLength(uint16_t bytes); 
+void RFM_spiConfig(char cs) ; 
 
-void RFM_setSyncWords(char* syncwords);
+void RFM_writeReg(char address, char data, char cs);
 
-void RFM_spiConfig() ; 
+char RFM_readReg(char address, char cs);
 
-void RFM_writeReg(char address, char data);
+void RFM_burstWrtie(char address,  char* src, char len, char cs);
 
-char RFM_readReg(char address);
+void RFM_burstRead(char address,  char* dest, char len,  char cs);
 
-void RFM_setFrequency(float centre); 
+void RFM_setFrequency(float centre, char cs ); 
 
-void RFM_modeSetter(char mode); 
+void RFM_modeSetter(char mode, char cs); 
 
-void RFM_setMode(char* currentMode, char mode) ;
+void RFM_setMode(char* currentMode, char mode, char cs) ;
 
-void RFM_send(char* data, char* currentMode);
+void RFM_send(char* data, char* currentMode, char length, char cs);
 
+char Read_FIFO(char* buffer, char* currentMode, char cs);
 
-void RFM_setPowerLevel(char powerLevel); 
+void RFM_setPowerLevel(char powerLevel, char cs); 
 
-void RFM_setHighPower(char onOff); 
+void RFM_setHighPower(char onOff, char cs); 
 
-int RFM_readRSSI() ; 
+int RFM_readRSSI(char cs) ; 
 
-char RFM_interruptHandler(char* currentMode)  ;
+char RFM_interruptHandler(char* currentMode, char cs)  ;

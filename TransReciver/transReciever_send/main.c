@@ -51,14 +51,14 @@ int main(int argc, const char * argv[]) {
 
 	sei(); // start interrupts 
 
-	char message[] = "hey you there" ;
+	char message[] = "Whats up" ;
 	
 
 	while (1)
 	{
 		// serial_outputString(radio.buffer);
 
-		RFM_send(message,&radio.currentMode);
+		RFM_send(message,&radio.currentMode, sizeof(message), radio.slaveSelectPin);
 
 
 		_delay_ms(1);
@@ -73,7 +73,9 @@ int main(int argc, const char * argv[]) {
 ISR(INT0_vect)
 {
 	serial_outputString("I ");
-	radio.packet_sent = RFM_interruptHandler(&radio.currentMode); // set to idle, needs to do this in order to know the package was sent. 
-
+	// set to idle
+	// RFM_setMode(&radio.currentMode,0,radio.slaveSelectPin); // set to idle
+	radio.packet_sent = RFM_interruptHandler(&radio.currentMode,radio.slaveSelectPin);
+	// this pin should change when something has been recieve
 
 }

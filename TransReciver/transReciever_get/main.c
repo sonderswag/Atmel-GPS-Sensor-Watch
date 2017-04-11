@@ -12,8 +12,8 @@
 #include <avr/interrupt.h>
 
 #include "../../Digital_IO/DigitalIo.h"
-#include "../../RFM/RFM69.h"
-#include "../../SPI/SPI_control.h"
+#include "../..//RFM/RFM69.h"
+#include "../..//SPI/SPI_control.h"
 #include "../../Serial/serial.h"
 
 #define Serial_rate 47
@@ -30,7 +30,7 @@ void interruptInit()
 	PCMSK0 |= 0x80;
 }
 
-int main() {
+int main(int argc, const char * argv[]) {
 	
 	// Initalize --------------------------------------------------------
 	interruptInit();  // Interrupts
@@ -48,13 +48,22 @@ int main() {
 
 	//--------------------------------------------------------
 
+	RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // RX
 
 	while (1)
 	{	
-		if (RFM_recieve(&radio))
+		// need this if case for reading the data
+		if (radio.receiveDataFlag)
 		{
+			radio.receiveDataFlag = 0; //reset the flag 
+			radio.buffer_length = Read_FIFO(radio.buffer,&radio.currentMode, radio.slaveSelectPin);
+			// have to do this after receiving somehting 
+			RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // set mode to RX
+
+
+
 			serial_outputString(radio.buffer); 
-		} 
+		}
 		_delay_ms(2);
 		// radio.buffer_length = Read_FIFO(radio.buffer,&radio.currentMode, radio.slaveSelectPin);
 		// RFM_printMode(radio.slaveSelectPin);
@@ -69,8 +78,8 @@ int main() {
 //Hardware interrupt
 ISR(INT0_vect)
 {
-	serial_outputString("I ");
+	// serial_outputString("I ");
 
-	radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode) ;
+		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, radio.slaveSelectPin) ;
 
 }
