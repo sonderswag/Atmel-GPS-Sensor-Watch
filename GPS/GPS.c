@@ -43,7 +43,7 @@ char GPS_parse(struct GPS* gps)
     gps->fixquality = atoi(splitString[5]); 
 
     //Check to see if we are getting valid data
-    if (splitString[5] == 0x30) //0 
+    if (gps->fixquality == 0) //0 
     {
         return 1;
     }
@@ -100,7 +100,7 @@ char GPS_parse(struct GPS* gps)
 
     gps->altitude = atof(splitString[8]); 
 
-    gps->satellites = aoti(splitString[6])
+    gps->satellites = atoi(splitString[6]);
 
 
     // GPS_printInfo(gps); 
@@ -131,7 +131,6 @@ void GPS_readSerialInput(struct GPS* gps)
             }
             else if (gps->state == 3)
             {
-
                 if (input == 0x47) gps->state = 4; //G
                 else gps->state = 0; 
             }
@@ -153,8 +152,6 @@ void GPS_readSerialInput(struct GPS* gps)
                     break; 
                 }
                 gps->buffer[gps->sizeInputString++] = input; 
-                
-                
             }
         }
         // serial_outputString(gps->buffer); 
@@ -172,12 +169,12 @@ void GPS_printInfo(struct GPS* gps)
 {
     char buffer[50]; 
 
-    FloatToStringNew(buffer,gps->latitude , 6); 
-    serial_outputString("latitude: ");
-    serial_outputString(buffer);
-
     FloatToStringNew(buffer,gps->longitude , 6); 
     serial_outputString("longitude: ");
+    serial_outputString(buffer);
+
+    FloatToStringNew(buffer,gps->latitude , 6); 
+    serial_outputString("latitude: ");
     serial_outputString(buffer);
 
     FloatToStringNew(buffer,gps->altitude , 1); 
