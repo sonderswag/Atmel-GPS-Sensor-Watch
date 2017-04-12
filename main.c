@@ -20,82 +20,61 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#include <avr/interrupt.h>
+#include <stdio.h>
 #include <string.h> 
 #include <stdlib.h>
 
-#include "../Serial/serial.h" 
-#include "../GPS/GPS.h" 
+#include "../../Serial/serial.h" 
+#include "../GPS.h" 
 
-// include other libraries from other folders
-#include "../Digital_IO/DigitalIo.h"
-#include "../RFM/RFM69.h"
-#include "../SPI/SPI_control.h"
+// convert float to string one decimal digit at a time
+// assumes float is < 65536 and ARRAYSIZE is big enough
+// problem: it truncates numbers at size without rounding
+// str is a char array to hold the result, float is the number to convert
+// size is the number of decimal digits you want
 
-#define Serial_rate 47
-struct RFM69 radio;
 
-void interruptInit()
+
+
+int main(void)
 {
-	DDRD &= ~(1 <<DDD2) ; 
-	PORTD |= (1<<PORTD2); 
-	EICRA |= (1<<ISC00) | (1<<ISC01); // set it for rising edge 
-	EIMSK |= (1 << INT0); 
-	sei(); 					// set enable interrupts
-	PCMSK0 |= 0x80;
-}
+    // DDRC |= 1 << DDC0;          // Set PORTC bit 0 for output
 
-int main(int argc, const char **argv)
-{
-	// initialize the interrupt
-	interruptInit();			// Interrupts
-	serial_init(Serial_rate);	// Serial
-	spi_init_master();			// SPI
-
-    DDRC |= 1 << DDC0;          // Set PORTC bit 0 for output
-
-	// initialize the radio and constants
-	radio.slaveSelectPin = 24;
-	radio.currentMode = 0;
-	radio.buffer_length = 0;
-	radio.packet_sent = 0;
-	
-    /* calculate from clock freq and baud see handout 
+    /* calculate from clock freq and buad see handout 
  	UBRR = [f_osc / (16*BUAD)] - 1 
  	UBRR = 47 
  	*/
-
-	// setting up the GPS struct
+	serial_init(47);
+	
+	/*
 	struct GPS gps; 
 	gps.sizeInputString = 0; 
-	
-	// setting up RFM parameters
-	RFM_spiConfig(radio.slaveSelectPin);
-	RFM_init(radio.slaveSelectPin);
-	
-	// initialize interrupts
-	sei();
+	gps.state = 0;
 
     while (1) 
     {
-		PORTC |= 1 << PC0;      // Set PC0 to a 1
-		PORTC &= ~(1 << PC0);   // Set PC0 to a 0
-		
-		GPS_readSerialInput(&gps); 			// reading serial input
-		serial_out((char) gps.latitude); 	// print out serial values of char
-		
-		// sending the char through the RFM69
-		RFM_send(((char) gps.latitude), &radio.currentMode);
-		_delay_ms(1);
-    }
+    	// serial_out(serial_in());
+
+    	GPS_readSerialInput(&gps);
+        GPS_printInfo(&gps); 
+    	_delay_ms(2000);
+
+
+     
+	
+ 	}
+	*/
+	struct GPS gps1, gps2;
+	gps1.latitude = 34.020408;
+	gps1.longitude = -118.289977;
+	gps2.latitude = 34.024285;
+	gps2.longitude = -118.287595;
+	
+	float tester = GPS_calculate(&gps1, &gps2);
+	
+	char buffer[50];
+	FloatToStringNew(&buffer, tester, 6);
+	serial_outputString(buffer);
 
     return 0;   /* never reached */
-}
-
-// hardware interrupts, if needed
-
-ISR(INT0_vect) {
-	serial_outputString("I ");
-	// sets to idle, which is needed to know which packet was sent
-	radio.packet_sent = RFM_interruptHandler(&radio.currentMode);
 }
