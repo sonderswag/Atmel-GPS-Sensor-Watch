@@ -40,6 +40,8 @@ char GPS_parse(struct GPS* gps)
     // 7 == Horizontal dilution
     // 8 == Antenna altitude
    
+    gps->fixquality = atoi(splitString[5]); 
+
     //Check to see if we are getting valid data
     if (splitString[5] == 0x30) //0 
     {
@@ -97,6 +99,9 @@ char GPS_parse(struct GPS* gps)
 
 
     gps->altitude = atof(splitString[8]); 
+
+    gps->satellites = aoti(splitString[6])
+
 
     // GPS_printInfo(gps); 
     return 0;
@@ -178,6 +183,12 @@ void GPS_printInfo(struct GPS* gps)
     FloatToStringNew(buffer,gps->altitude , 1); 
     serial_outputString("Altitude: ");
     serial_outputString(buffer);
+
+    sprintf(buffer, "hour %d, min %d, sec %d", gps->hour, gps->minute, gps->seconds);
+    serial_outputString(buffer); 
+
+    sprintf(buffer, "satellites %d",gps->satellites); 
+    serial_outputString(buffer); 
 
 }
 
