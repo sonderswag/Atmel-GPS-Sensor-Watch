@@ -73,9 +73,11 @@ int main(int argc, const char **argv)
 			radio.receiveDataFlag = 0; //reset the flag 
 			radio.buffer_length = Read_FIFO(radio.buffer, &radio.currentMode, radio.slaveSelectPin);
 			// have to do this after receiving somehting 
+
 			RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // set mode to RX
 
 			serial_outputString(radio.buffer); 
+			_delay_ms(2);
 		}
 		_delay_ms(2);
     }
