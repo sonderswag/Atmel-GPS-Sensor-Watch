@@ -73,6 +73,7 @@ int main(int argc, const char **argv)
 	
 	// setting up the character buffer
 	char buffer[50];
+	char bufferMaster[60];
 
     while (1) 
     {
@@ -83,11 +84,74 @@ int main(int argc, const char **argv)
 		GPS_printInfo(&gps);  				// print out serial values of char
 		
 		// converting float to string: start with latitude
+		/*
 		FloatToStringNew(buffer, gps.latitude , 6); 
 		
 		// sending the char through the RFM69
 		RFM_send(buffer, &radio.currentMode, sizeof(buffer), radio.slaveSelectPin);
-		_delay_ms(1);
+		_delay_ms(2);
+
+		FloatToStringNew(buffer, gps.longitude, 6); 
+		RFM_send(buffer, &radio.currentMode, sizeof(buffer), radio.slaveSelectPin);
+		_delay_ms(2);
+		*/
+
+		int i;
+
+		PORTC |= 1 << PC0;      // Set PC0 to a 1
+		PORTC &= ~(1 << PC0);   // Set PC0 to a 0
+		
+		GPS_readSerialInput(&gps); 			// reading serial input
+		GPS_printInfo(&gps);  				// print out serial values of char
+
+		// basically, combine the parsed GPS data into a master buffer
+		// the master buffer will be sent through the radio to the receiver
+		
+		// processing latitude values onto the master buffer
+		FloatToStringNew(buffer, gps.latitude , 6); 
+		// from master[0] to master[5]
+		// master[6] will become an empty space
+		for (i = 0; i < 6; i++) {
+			bufferMaster[i] = buffer[i];
+		}
+		bufferMaster[6] = '\n';
+
+		// processing longiude values onto the master buffer
+		FloatToStringNew(buffer, gps.longitude , 6); 
+		// from master[7] to master[12]
+		// master[13] will become an empty space
+		for (i = 7; i < 13; i++) {
+			bufferMaster[i] = buffer[i - 7];
+		}
+		bufferMaster[13] = ' \n';
+
+		// process altitude to the master buffer
+		FloatToStringNew(buffer, gps.altitude , 6); 
+		// from master[14] to master[19]
+		// master[20] becomes an empty space
+		for (i = 14; i < 20; i++) {
+			bufferMaster[i] = buffer[i - 14];
+		}
+		bufferMaster[20] = '\n';
+
+		// process time to the master buffer
+		// total chars needed: 24
+		sprintf(buffer, "hour %d, min %d, sec %d", gps.hour, gps.minute, gps.seconds);
+		for (i = 21; i < 44; i++) {
+			bufferMaster[i] = buffer[i - 21];
+		}
+		bufferMaster[44] = '\n';
+
+		// process satellite amount to master buffer
+		// total chars needed: 14
+		sprintf(buffer, "satellites %d",gps.satellites); 
+		for (i = 45; i < 60; i++) {
+			bufferMaster[i] = buffer[i - 45];
+		}
+		
+		// sending the char through the RFM69
+		RFM_send(bufferMaster, &radio.currentMode, sizeof(bufferMaster), radio.slaveSelectPin);
+		_delay_ms(20);
     }
 
     return 0;   /* never reached */
