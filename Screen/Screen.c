@@ -57,7 +57,6 @@ void screen_init()
     screen_sendCommand(SSD1306_DISPLAYON);
 
    
-
 }
 
 void screen_sendCommand(uint8_t command)
@@ -201,7 +200,7 @@ void screen_drawString(unsigned char pos_x, unsigned char pos_y, char *string, u
 {
     uint8_t i = 0;
     while(string[0] != 0){
-        screen_drawChar(pos_x+(5*i), (pos_y/8), (string[0]), buff);
+        screen_drawChar(pos_x+(5*i), pos_y, (string[0]), buff);
         string++;
         i++;
     }

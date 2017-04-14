@@ -47,9 +47,10 @@ int main(int argc, const char * argv[]) {
 	RFM_spiConfig(radio.slaveSelectPin) ;
 	RFM_init(radio.slaveSelectPin);
 
+	sei(); // start interrupts 
 	//--------------------------------------------------------
 
-	sei(); // start interrupts 
+	
 
 	char message[] = "Whats up" ;
 	

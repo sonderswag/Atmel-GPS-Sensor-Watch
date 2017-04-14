@@ -9,13 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>	//test this
 
 
 #include "GPS.h"
 #include "../Serial/serial.h"
-
-
-
 
 
 char GPS_parse(struct GPS* gps)
@@ -189,3 +187,18 @@ void GPS_printInfo(struct GPS* gps)
 
 }
 
+
+float GPS_calculate(struct GPS* gps1, struct GPS* gps2)
+{
+	float R = 6371000;	//meters
+	float phi1 = (gps1->latitude)*M_PI/180;
+	float phi2 = (gps2->latitude)*M_PI/180;
+	float lambda1 = (gps1->longitude)*M_PI/180;
+	float lambda2 = (gps2->longitude)*M_PI/180;
+	
+	float a = sin((phi1-phi2)/2)*sin((phi1-phi2)/2) + cos(phi1)*cos(phi2)*sin((lambda1-lambda2)/2)*sin((lambda1-lambda2)/2);
+	float c = 2*atan2(sqrt(a),sqrt(1-a));
+	float d = R*c;
+	
+	return(d/1000);	//return kilometers
+}

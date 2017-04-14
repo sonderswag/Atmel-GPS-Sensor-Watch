@@ -33,7 +33,7 @@
 // str is a char array to hold the result, float is the number to convert
 // size is the number of decimal digits you want
 
-
+struct GPS gps; 
 
 
 int main(void)
@@ -45,8 +45,6 @@ int main(void)
  	UBRR = 47 
  	*/
 	serial_init(47);
-
-	struct GPS gps; 
 	gps.sizeInputString = 0; 
 	gps.state = 0;
 

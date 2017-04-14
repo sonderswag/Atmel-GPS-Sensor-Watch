@@ -1,5 +1,5 @@
-#ifndef Screen_h
-#define Screen_h
+#ifndef SCREEN_H
+#define SCREEN_H
 
 #include <stdint.h>
 

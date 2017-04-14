@@ -23,7 +23,7 @@ struct Screen screen;
 // The screen size is 128 x 64 pixels 
 void init()
 {
-	digitalWrite(25,0);
+	digitalWrite(25,0); // reset screen 
     digitalWrite(25,1);
 	screen_init(); 
 	screen_clear(screen.buffer);

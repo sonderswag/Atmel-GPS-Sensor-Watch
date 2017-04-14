@@ -45,6 +45,7 @@ uint8_t i2c_start(uint8_t address)
 	return 0;
 }
 
+
 uint8_t i2c_write(uint8_t data)
 {
 	// load data into data register
@@ -64,3 +65,25 @@ void i2c_stop(void)
 	// transmit STOP condition
 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
 }
+
+// used when reading from a device. returns the data byte 
+uint8_t i2c_read_ack()
+{
+	// start TWI module and acknowledge data after reception
+	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA); 
+	// wait for end of transmission
+	while( !(TWCR & (1<<TWINT)) );
+	// return received data from TWDR
+	return TWDR;
+}
+
+uint8_t i2c_read_nack()
+{
+	// start receiving without acknowledging reception
+	TWCR = (1<<TWINT) | (1<<TWEN);
+	// wait for end of transmission
+	while( !(TWCR & (1<<TWINT)) );
+	// return received data from TWDR
+	return TWDR;
+}
+
