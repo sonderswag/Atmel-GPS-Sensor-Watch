@@ -1,7 +1,7 @@
 DEVICE     = atmega328p
 CLOCK      = 7372800
 PROGRAMMER = -c usbtiny -P usb
-OBJECTS    = main.o ../../Serial/serial.o ../../Digital_IO/DigitalIo.o ../../RFM/RFM69.o ../../SPI/SPI_control.o 
+OBJECTS    = main.o ../../Serial/serial.o ../../Digital_IO/DigitalIo.o ../../GPS/GPS.o ../../RFM/RFM69.o ../../SPI/SPI_control.o 
 FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0xe0:m
 
 # Fuse Low Byte = 0xe0   Fuse High Byte = 0xd9   Fuse Extended Byte = 0xff

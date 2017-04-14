@@ -24,7 +24,7 @@
 #include <string.h> 
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <math.h>
 
 // include other libraries from other folders
 #include "../../Serial/serial.h" 
@@ -32,8 +32,13 @@
 #include "../../RFM/RFM69.h"
 #include "../../SPI/SPI_control.h"
 
+// include the GPS struct as well
+#include "../../GPS/GPS.h"
+
 #define Serial_rate 47
 struct RFM69 radio;
+struct GPS gps_local;		// receiver GPS
+struct GPS gps_remote;		// sender GPS
 
 void interruptInit()
 {
@@ -64,11 +69,18 @@ int main(int argc, const char **argv)
 	
 	RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // RX
 
-	char latitude_sent[50];
-	char longitude_send[50];
+	// remote latitude & longitude elements
+	char latitude_remote[50];
+	char longitude_remote[50];
+
+	// other buffer
+	char buffer[50];
 
     while (1) 
     {
+    	PORTC |= 1 << PC0;      		// Set PC0 to a 1
+		PORTC &= ~(1 << PC0);   		// Set PC0 to a 0
+
 		// need this if case for reading the data
 		if (radio.receiveDataFlag)
 		{
@@ -85,7 +97,7 @@ int main(int argc, const char **argv)
 
 			// subpart 1: extracting latitude from sent data
 			while (radio.buffer[index] != '\n') {
-				latitude_sent[index] = radio.buffer[index];
+				latitude_remote[index] = radio.buffer[index];
 				index++;
 			}
 
@@ -94,13 +106,35 @@ int main(int argc, const char **argv)
 
 			// subpart 2: extracting longitude from sent data
 			while (radio.buffer[index] != '\n') {
-				longitude_send[secIndex] = radio.buffer[index];
+				longitude_remote[secIndex] = radio.buffer[index];
 				secIndex++;
 				index++;
 			}
 
+			// ***** do this the old-school way **********//
+
 			// both sent latitude & longitude should be extracted
-			
+			// FloatToStringNew(latitude_local, gps_local.latitude, 6);
+			// FloatToStringNew(longitude_local, gps_local.longitude, 6);
+
+			// update remote GPS struct values
+			gps_remote.latitude = atof(latitude_remote);
+			gps_remote.longitude = atof(longitude_remote);
+
+			float R = 6371000;		// value in meters
+			float phi1 = (gps_local.latitude) * M_PI / 180;
+			float phi2 = (atof(latitude_remote)) * M_PI / 180;
+			float lambda1 = (gps_local.longitude) * M_PI / 180;
+			float lambda2 = (atof(longitude_remote)) * M_PI / 180;
+
+			float a = sin((phi1-phi2)/2)*sin((phi1-phi2)/2) + cos(phi1)*cos(phi2)*sin((lambda1-lambda2)/2)*sin((lambda1-lambda2)/2);
+			float c = 2*atan2(sqrt(a),sqrt(1-a));
+			float d = (R*c) / 1000;		// obtain value in km
+
+			// calculating GPS distance and displaying on the serial screen, for now
+			FloatToStringNew(buffer, d , 6); 
+			serial_outputString("Distance in km: ");
+			serial_outputString(buffer);
 		}
 		_delay_ms(2);
     }
