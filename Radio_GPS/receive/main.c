@@ -64,6 +64,9 @@ int main(int argc, const char **argv)
 	
 	RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // RX
 
+	char latitude_sent[50];
+	char longitude_send[50];
+
     while (1) 
     {
 		// need this if case for reading the data
@@ -73,11 +76,31 @@ int main(int argc, const char **argv)
 			radio.receiveDataFlag = 0; //reset the flag 
 			radio.buffer_length = Read_FIFO(radio.buffer, &radio.currentMode, radio.slaveSelectPin);
 			// have to do this after receiving somehting 
-
 			RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // set mode to RX
 
 			serial_outputString(radio.buffer); 
-			_delay_ms(2);
+
+			// next part: calculating distance based on parsed data
+			int index = 0;
+
+			// subpart 1: extracting latitude from sent data
+			while (radio.buffer[index] != '\n') {
+				latitude_sent[index] = radio.buffer[index];
+				index++;
+			}
+
+			index += 1;
+			int secIndex = 0;
+
+			// subpart 2: extracting longitude from sent data
+			while (radio.buffer[index] != '\n') {
+				longitude_send[secIndex] = radio.buffer[index];
+				secIndex++;
+				index++;
+			}
+
+			// both sent latitude & longitude should be extracted
+			
 		}
 		_delay_ms(2);
     }
