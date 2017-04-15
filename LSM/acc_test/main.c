@@ -16,10 +16,12 @@
 #include "../../Digital_IO/DigitalIo.h"
 #include "../../Serial/Serial.h"
 
+int steps = 0; 
+
 
 int main(int argc, const char * argv[]) {
 	serial_init(47);
-	
+	interruptInit();
 	float x,y,z,temp; 
 	float x_avg, y_avg, z_avg; 
 	char buf[20];
@@ -33,13 +35,10 @@ int main(int argc, const char * argv[]) {
 	{
 		Acc_readXYZ(&x,&y,&z);
 
-		
-
-
-		FloatToStringNew(buf, x_avg, 6);
-		serial_out('X');
-		serial_out(' '); 
-		serial_outputString(buf); 
+		// FloatToStringNew(buf, x_avg, 6);
+		// serial_out('X');
+		// serial_out(' '); 
+		// serial_outputString(buf); 
 
 		// FloatToStringNew(buf, y_avg, 6);
 		// serial_out('Y');
@@ -51,11 +50,19 @@ int main(int argc, const char * argv[]) {
 		// serial_out(' '); 
 		// serial_outputString(buf); 
 
-		_delay_ms(50);
+		_delay_ms(5);
 	}
 
     return 0;
 }
 
 
+//Hardware interrupt
+ISR(INT1_vect)
+{
+	step++ ; 
+	char buf[20] ; 
+	sprintf(buf,"count : %d",step);
+	serial_outputString(buf);
+}
 
