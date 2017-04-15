@@ -9,25 +9,70 @@
 #include "menu.h"
 
 #define redbut (1<<PD6)
+#define greenbut (1<<PD7)
+#define bluebut (1<<PB0)
 
 //global variables
 float mode = 0;
 int RBcount = 0;
+int flag = 0;
 
 ISR(PCINT2_vect)	{
-	if (((PIND & (1<<PD6))==1) && RBcount >= 100)	{
-		mode = mode+1;
+	//if ((PIND & (1<<PD6))==0)	{
+	if ((PIND & redbut)==0)	{
+		mode++;
 		char buffer[50];
 		FloatToStringNew(&buffer, mode, 0);
-		serial_outputString(buffer);
+		serial_outputString(buffer);	
+		_delay_ms(50);
+		while ((PIND & redbut)==0)	{}
+		_delay_ms(50);
+	}
+	//else if ((PIND & (1<<PD7))==0)	{
+	else if ((PIND & greenbut)==0)	{
+		mode = mode+2;
+		char buffer[50];
+		FloatToStringNew(&buffer, mode, 0);
+		serial_outputString(buffer);	
+		_delay_ms(50);
+		while ((PIND & greenbut)==0)	{}
+		_delay_ms(50);
+	}
+	/*if ((PIND & (1<<PD6))==0 && flag==0)	{
+		mode++;
+		char buffer[50];
+		FloatToStringNew(&buffer, mode, 0);
+		serial_outputString(buffer);	
+		flag = 1;
 		RBcount = 0;
-	}	
-	
+	}
+	else if ((PIND & (1<<PD6))==1)	{
+		flag = 0;
+		RBcount = 0;
+		char* str = "exit \n";
+    	serial_outputString(str);
+	}*/
+}
+
+ISR(PCINT0_vect)	{
+	//if ((PINB & (1<<PB0))==0)	{
+	if ((PINB & bluebut)==0)	{
+		mode--;
+		char buffer[50];
+		FloatToStringNew(&buffer, mode, 0);
+		serial_outputString(buffer);	
+		_delay_ms(50);
+		while ((PINB & bluebut)==0)	{}
+		_delay_ms(50);
+	}
 }
 
 int main (void)	{
 	//DDRD |= (1<<DD6);	//Initialize D6 to output mode
 	PORTD |= (1<<PD6);	//enable pull up on PD6
+	PORTD |= (1<<PD7);	//enable pull up on PD7
+	PORTB |= (1<<PB0);	//enable pull up on PB0
+	
 	serial_init(47);
 	
 	/*print hello when pressed
@@ -55,13 +100,16 @@ int main (void)	{
 		}
 	}*/
 	// pin change interrupts
-	PCMSK2 |= (1 << PCINT22);
-	PCICR |= (1 << PCIE2);
+	PCMSK2 |= (1 << PCINT22);	//Red button
+	PCMSK2 |= (1 << PCINT23);	//Green button
+	PCICR |= (1 << PCIE2);		//pin change int control register
+	
+	PCMSK0 |= (1 << PCINT0); 	//Blue button
+	PCICR |= (1 << PCIE0);
+	
 	sei();
 	
 	while(1)	{
-		if ((PIND & (1<<PD6))==0)	{
-			RBcount = RBcount+1;
-		}
+
 	}
 }
