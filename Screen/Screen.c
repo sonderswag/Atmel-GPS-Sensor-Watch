@@ -186,7 +186,7 @@ void screen_clear(char* buffer)
 void screen_drawChar(unsigned char pos_x, unsigned char pos_y, 
     unsigned char letter, uint8_t *buff)
 {
-    char page = (pos_y/8); 
+    char page = (pos_y); 
 
     uint8_t ascii_offset = 32;
     char i ;
@@ -200,7 +200,7 @@ void screen_drawString(unsigned char pos_x, unsigned char pos_y, char *string, u
 {
     uint8_t i = 0;
     while(string[0] != 0){
-        screen_drawChar(pos_x+(5*i), pos_y, (string[0]), buff);
+        screen_drawChar(pos_x+(5*i), pos_y / 8, (string[0]), buff);
         string++;
         i++;
     }

@@ -2,4 +2,4 @@
 #define MENU_h 
 #endif 
 
-char press_button();
+void press_button();

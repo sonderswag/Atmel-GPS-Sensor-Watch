@@ -4,7 +4,7 @@
 
 #include "menu.h"
 
-char press_button()	{
+void press_button()	{
 	char press1 = (PIND & (1<<PD6));
 	if (press1 == 0)	{
 		_delay_ms(5);
@@ -15,4 +15,5 @@ char press_button()	{
 	else	{
 		return 0;
 	}
+		//if ((PIND & (1<<PD6))==0)	{
 }

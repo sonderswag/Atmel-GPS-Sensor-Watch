@@ -40,7 +40,7 @@ struct Screen
 };
 
 void screen_sendCommand(uint8_t command); 
-
+void screen_clear(char* buffer);
 void screen_init(); 
 void screen_drawPixel(char pos_x, char pos_y, char status, char* buffer); 
 void screen_drawHLine(char x, char y, char length, char* buffer); 

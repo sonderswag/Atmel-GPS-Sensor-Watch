@@ -1,5 +1,4 @@
 #include "Heart_rate.h"
-
 #include <stdio.h>
 #include <util/delay.h>
 #include <avr/io.h> 

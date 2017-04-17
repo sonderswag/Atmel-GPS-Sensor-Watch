@@ -51,7 +51,7 @@ int main(int argc, const char * argv[]) {
 	while (1)
 	{
 		_delay_ms(200);
-		
+	    
 		// current step is to draw some strings
 		GPS_readSerialInput(&gps);
 		// prints out GPS data into the serial screen
