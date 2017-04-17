@@ -26,4 +26,4 @@ void GPS_parseLocation(const char* latitude, const char* dirNS,
 
 char GPS_parse(struct GPS* gps); 
 void GPS_readSerialInput(struct GPS* gps); 
-float GPS_calculate(struct GPS* gps1, struct GPS* gps2);
+float GPS_calculate(struct GPS* gps1, float lat_2, float log_2);

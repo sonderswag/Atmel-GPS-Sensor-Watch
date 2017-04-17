@@ -12,8 +12,8 @@
 #include <avr/interrupt.h>
 
 #include "../../Digital_IO/DigitalIo.h"
-#include "../..//RFM/RFM69.h"
-#include "../..//SPI/SPI_control.h"
+#include "../../RFM/RFM69.h"
+#include "../../SPI/SPI_control.h"
 #include "../../Serial/serial.h"
 
 #define Serial_rate 47

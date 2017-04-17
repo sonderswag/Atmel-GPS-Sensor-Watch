@@ -45,7 +45,7 @@ void LSM_init()
 
 
 	//set accelerometer wait 
-	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x0A,0xE4); // 100
+	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x0A,0xB2); // 100
 
 
 	// set wait to be 
