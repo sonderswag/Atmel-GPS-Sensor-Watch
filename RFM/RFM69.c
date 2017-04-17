@@ -55,7 +55,7 @@ void RFM_init(char cs)
     RFM_writeReg(RH_RF69_REG_5A_TESTPA1, RH_RF69_TESTPA1_NORMAL, cs);
     RFM_writeReg(RH_RF69_REG_5C_TESTPA2, RH_RF69_TESTPA2_NORMAL, cs);
 
-    char syncwords[] = {0x2d, 0x4d};
+    char syncwords[] = {0x5d, 0x3d};
     RFM_setSyncWords(syncwords, cs);
 
     RHFM_setPreambleLength(4,cs); 

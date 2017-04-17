@@ -35,15 +35,18 @@ void HR_start(volatile struct HR_data* HR)
 	// HR->lower_threshold = 300; 
 	HR->threshold = 550; 
 	HR->min = 1000;
-	ADCSRA |= (1 << ADSC) ; // start the first conversion 
+	HR->heart_count = 0; 
+	HR->last_count = 0;
 	HR->take_data = 1; 
 	HR->calibrate = 10; 
+	HR->BPM = 0; 
+	
+	ADCSRA |= (1 << ADSC) ; // start the first conversion 
 	TCCR1B |= (1 << CS12) | (1 << CS10); //this starts the timer; and sets the prescale to 1024
 }
 
 void HR_stop(volatile struct HR_data* HR)
 {
-	
 	HR->take_data = 0; 
 	TCCR1B &= ~((1 <<CS11) | (1 << CS12) | (1 << CS10)); //stopping the timer by setting the prescale to 0 
 }
@@ -112,9 +115,9 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 	{
 		HR->BPM = 12*HR->heart_count; 
 	}
-	char buf[20];
-	sprintf(buf,"\tbpm : %d",HR->BPM);
-	serial_outputString(buf);
+	// char buf[20];
+	// sprintf(buf,"\tbpm : %d",HR->BPM);
+	// serial_outputString(buf);
 
 	if (HR->heart_count > 4)
 	{
@@ -142,10 +145,10 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 		}
 		// HR->upper_threshold = HR->max - 100 ;
 		// HR->lower_threshold = HR->min + 200; 
-		char buf[20];
+		// char buf[20];
 		// sprintf(buf,"uppser : %d, lower: %d",HR->upper_threshold, HR->lower_threshold);
-		sprintf(buf,"threshold %d",HR->threshold);
-		serial_outputString(buf);
+		// sprintf(buf,"threshold %d",HR->threshold);
+		// serial_outputString(buf);
 		HR->max = 0; 
 
 	}

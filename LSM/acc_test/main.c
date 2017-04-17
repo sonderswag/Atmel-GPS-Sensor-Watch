@@ -21,7 +21,11 @@ int steps = 0;
 
 int main(int argc, const char * argv[]) {
 	serial_init(47);
-	interruptInit();
+	
+	DDRD  &= ~(1 << DDD3); 
+	PORTD |= (1<<PORTD3);
+	EICRA |= (1<<ISC10) | (1 << ISC11);
+	EIMSK |= (1<< INT1);  
 	float x,y,z,temp; 
 	float x_avg, y_avg, z_avg; 
 	char buf[20];
@@ -60,9 +64,9 @@ int main(int argc, const char * argv[]) {
 //Hardware interrupt
 ISR(INT1_vect)
 {
-	step++ ; 
+	steps++ ; 
 	char buf[20] ; 
-	sprintf(buf,"count : %d",step);
+	sprintf(buf,"count : %d",steps);
 	serial_outputString(buf);
 }
 

@@ -38,7 +38,7 @@ int main(int argc, const char * argv[])
 }
 
 
-//
+// when the adc is done 
 ISR(ADC_vect)
 {
 	HR_read(&HR); 
@@ -49,7 +49,5 @@ ISR(TIMER1_COMPA_vect)
 {
 	serial_outputString("time");
 	HR_calc_BPM(&HR);
-	
-
 }
 

@@ -9,7 +9,7 @@ volatile struct HR_data
 	uint8_t state; // 0 not a new heart rate , 1 currently high 
 	uint16_t max; 
 	uint16_t min;
-	uint16_t BPM; 
+	uint8_t BPM; 
 	uint8_t heart_count;
 	uint8_t last_count; 
 	uint8_t long_count; 
@@ -23,6 +23,7 @@ volatile struct HR_data
 
 
 void HR_start(volatile struct HR_data* HR);
+void HR_stop(volatile struct HR_data* HR);
 void HR_init(); 
 void HR_read(volatile struct HR_data* HR); 
 void HR_calc_BPM(volatile struct HR_data* HR);

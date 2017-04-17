@@ -40,9 +40,12 @@ void LSM_init()
 	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x0C,0x40); 
 
 	//set interrupt thresholds 
-	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x07,0x14); // 20
-	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x08,0x14); // 20
+	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x07,0x0F); // 20
+	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x08,0x0F); // 20
 
+
+	//set accelerometer wait 
+	LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x0A,0xE4); // 100
 
 
 	// set wait to be 

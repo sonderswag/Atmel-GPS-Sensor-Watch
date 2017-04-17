@@ -39,7 +39,6 @@ void init()
     digitalWrite(25,1);
 	screen_init(); 
 	screen_clear(screen.buffer);
-	// ------------------------------------------------------
 
 	// -------------------- buttons --------------------------
 	PORTD |= (1<<PD6);	//enable pull up on PD6
@@ -52,11 +51,10 @@ void init()
 	PCICR  |= (1 << PCIE2);		//pin change int control register
 	PCMSK0 |= (1 << PCINT0); 	//Blue button
 	PCICR  |= (1 << PCIE0);
-	// ------------------------------------------------------
+
 
 	// -------------------- Serial --------------------------
 	serial_init(47);
-	// ------------------------------------------------------
 
 
 	// -------------------- GPS --------------------------
@@ -65,7 +63,6 @@ void init()
 	gps.sizeInputString = 0; 
 	gps.state = 0;
 
-	// ------------------------------------------------------
 
 	// -------------------- Accelerometer --------------------------
 	// hardware interrupt 1 for the acc 
@@ -74,7 +71,11 @@ void init()
 	EICRA |= (1<<ISC10) | (1 << ISC11);
 	EIMSK |= (1<< INT1);  
 	LSM_init(); 
-	// ------------------------------------------------------
+
+	// -------------------- Heart_rate --------------------------
+	HR_init(); 
+
+
 }
 
 
@@ -83,9 +84,18 @@ void new_mode_test()
 	if (new_mode)
 	{
 		new_mode = 0; 
-		screen_clear(screen.buffer);
+		memset(screen.buffer,0,1024);
  		screen_sendBuffer(screen.buffer);
- 		_delay_ms(1); 
+ 		_delay_ms(2); 
+
+ 		if (mode == 3) // want to start the heart rate measuring 
+ 		{
+ 			HR_start(&HR);
+ 		}
+ 		else if (mode == 4 || mode == 2)
+ 		{
+ 			HR_stop(&HR);
+ 		}
 	}
 	else 
 	{
@@ -96,7 +106,7 @@ void new_mode_test()
 int main (int argc, const char * argv[])	{
 	init();
 	sei();
-	char buffer[30];
+	char buffer[23];
 
 	// mode settings
 	// mode = 1 --> read GPS data and time
@@ -126,22 +136,92 @@ int main (int argc, const char * argv[])	{
  		{
  			new_mode_test();
  			sprintf(buffer, "steps : %d", steps);
+ 			screen_clear(screen.buffer);
  			screen_drawString(5, 30, buffer, screen.buffer);
  			screen_sendBuffer(screen.buffer);
  		}
  		
- 		// mode 3: track steps
+ 		// mode 3: track heart rate
+
  		else if (mode==3)	
  		{
+ 			
  			new_mode_test();
- 			screen_drawFillCircle(10,10,10,1,screen.buffer);
+ 			char hr[15];
+ 			sprintf(hr, "Heart Rate : %d", HR.BPM);
+ 			memset(screen.buffer,0,1024);
+ 			screen_drawString(5, 30, hr, screen.buffer);
  			screen_sendBuffer(screen.buffer);
+ 			// screen_drawFillCircle(10,10,10,1,screen.buffer);
+ 			// screen_sendBuffer(screen.buffer);
  		}
 
- 		// mode 4: tracking people
+ 		// mode 4: GPS data 
  		else if (mode==4)	
  		{
  			new_mode_test();
+ 			GPS_readSerialInput(&gps);
+ 			char data[15]; 
+
+ 			// current step is to draw some strings
+			GPS_readSerialInput(&gps);
+			// prints out GPS data into the serial screen
+			//GPS_printInfo(&gps); 
+		
+			// prints out latitude values
+			// screen_drawString(5, 0, "Lat:", screen.buffer);
+			// screen_sendBuffer(screen.buffer); 	// uploading the drawing
+ 		// 	FloatToStringNew(lat_data, gps.latitude , 6); 
+			// screen_drawString(50, 0, lat_data, screen.buffer);
+			// screen_sendBuffer(screen.buffer); 	// uploading the drawing
+		
+			// // print out longitude values
+			// screen_drawString(5, 10, "Long:", screen.buffer);
+			// screen_sendBuffer(screen.buffer); 	// uploading the drawing
+ 		// 	FloatToStringNew(log_data, gps.longitude , 6); 
+ 		// 	screen_drawString(50, 10, log_data, screen.buffer);
+ 		// 	screen_sendBuffer(screen.buffer); 	// uploading the drawing
+		
+			// // print out altitude values
+			// screen_drawString(5, 20, "Alt:", screen.buffer);
+			// screen_sendBuffer(screen.buffer); 	// uploading the drawing
+ 		// 	//FloatToStringNew(buffer, gps.altitude , 1); 
+ 		// 	FloatToStringNew(alt_data, gps.altitude , 1); 
+ 		// 	screen_drawString(50, 20, alt_data, screen.buffer);
+ 		// 	screen_sendBuffer(screen.buffer); 	// uploading the drawing// 
+ 		// 	// print out satellites
+ 		// 	sprintf(buffer, "satellites %d",gps.satellites); 
+ 		// 	screen_drawString(5, 30, buffer, screen.buffer);
+ 		// 	screen_sendBuffer(screen.buffer); 
+			memset(data,0,sizeof(data));
+ 		    FloatToStringNew(data,gps.longitude , 6); 
+		    sprintf(buffer,"Longitude: ");
+		    strcat(buffer,data); 
+		    screen_drawString(5, 5, buffer, screen.buffer);
+			
+			memset(data,0,sizeof(data));
+		    FloatToStringNew(data,gps.latitude , 6); 
+		    sprintf(buffer,"Latitude: ");
+		    strcat(buffer,data); 
+		    screen_drawString(5, 20, buffer, screen.buffer);
+			
+			memset(data,0,sizeof(data));
+		    FloatToStringNew(data,gps.altitude , 1); 
+		    sprintf(buffer,"Altitude: ");
+		    strcat(buffer,data); 
+		    screen_drawString(5, 35, buffer, screen.buffer);
+
+		    memset(data,0,sizeof(data));
+ 			sprintf(buffer, "satellites %d",gps.satellites); 
+ 			screen_drawString(5, 50, buffer, screen.buffer);
+ 			screen_sendBuffer(screen.buffer);
+
+
+ 		}
+
+ 		else if (mode == 5)
+ 		{
+ 			new_mode_test(); 
  			screen_drawFillRectangle(10,10,30,20,1,screen.buffer);
  			screen_sendBuffer(screen.buffer);
  		}
@@ -157,9 +237,9 @@ ISR(PCINT2_vect)
 	if ((PIND & redbut)==0)	{
 		mode++;
 
-		char bufferbut[10];
-		sprintf(bufferbut,"redbut %d",mode);
-		serial_outputString(bufferbut);	
+		// char bufferbut[10];
+		// sprintf(bufferbut,"redbut %d",mode);
+		// serial_outputString(bufferbut);	
 		_delay_ms(1);
 		while ((PIND & redbut)==0)	{}
 		_delay_ms(1);
@@ -169,11 +249,11 @@ ISR(PCINT2_vect)
 	{
 		mode = mode-1;
 		if (mode == 0)	{
-			mode = 4;
+			mode = 5;
 		}
-		char bufferbut[10];
-		sprintf(bufferbut,"green %d",mode);
-		serial_outputString(bufferbut);	
+		// char bufferbut[10];
+		// sprintf(bufferbut,"green %d",mode);
+		// serial_outputString(bufferbut);	
 		_delay_ms(1);
 		while ((PIND & greenbut)==0)	{}
 		_delay_ms(1);
@@ -185,21 +265,36 @@ ISR(PCINT0_vect)
 	new_mode = 1; 
 	if ((PINB & bluebut)==0)	{
 		mode = mode+1;
-		if (mode == 5)	{
+		if (mode == 6)	{
 			mode = 1;
 		}
-		char bufferbut[10];
-		sprintf(bufferbut,"blue %d",mode);
-		serial_outputString(bufferbut);	
+		// char bufferbut[10];
+		// sprintf(bufferbut,"blue %d",mode);
+		// serial_outputString(bufferbut);	
 		_delay_ms(1);
 		while ((PINB & bluebut)==0)	{}
 		_delay_ms(1);
 	}
 }
-// -----------------------------------------------------------------------
+
 
 //Hardware interrupt for the accelerometer 
 ISR(INT1_vect)
 {
 	steps++ ; 
 }
+
+// for the adc 
+ISR(ADC_vect)
+{
+	HR_read(&HR); 
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+	serial_outputString("time");
+	HR_calc_BPM(&HR);
+}
+
+
+
