@@ -27,7 +27,8 @@
 uint8_t mode = 1;		//float so can print out for testing
 uint8_t new_mode = 1; 	// this is a flag for entering into a new mode 
 uint16_t steps = 0;		// step counter
-// screen and GPS structs
+
+// radio, screen and GPS structs
 struct Screen screen; 
 struct GPS gps;
 struct RFM69 radio;
@@ -98,8 +99,6 @@ void init()
 	RFM_spiConfig(radio.slaveSelectPin);
 	spi_init_master();			// SPI
 	RFM_init(radio.slaveSelectPin);
-	// serial_outputString("hey");
-
 }
 
 
@@ -224,32 +223,16 @@ int main (int argc, const char * argv[])	{
 
  		else if (mode == 5)
  		{
+            char latitude_remote[10];
+            char longitude_remote[10];
+            
  			new_mode_test(); 
  			GPS_readSerialInput(&gps); 	
 
- 			/* to send 
- 			// memset(buffer,0,sizeof(buffer));
- 			// memset(data,0,sizeof(data));
- 			// FloatToStringNew(buffer, gps.latitude , 6); 
- 			// strcat(buffer,'\n');
- 			// FloatToStringNew(data, gps.longitude , 6); 
- 			// strcat(buffer,data); 
- 			// RFM_send(buffer, &radio.currentMode, sizeof(buffer), radio.slaveSelectPin);
- 			*/ 
- 			// if (radio.packet_sent == 0)
- 			// {
- 			// 	memset(buffer,0,sizeof(buffer));
- 			// 	sprintf(buffer,"start");
- 			// 	RFM_send(buffer, &radio.currentMode, sizeof(buffer), radio.slaveSelectPin);
- 			// }
- 			// else
- 			// {
-
- 			// }
  			if (radio.currentMode = 1)
  			{
  				memset(buffer,0,sizeof(buffer));
- 				sprintf(buffer,"dist");
+ 				sprintf(buffer,"dist: ");
  				screen_drawString(5, 30, buffer, screen.buffer);
  				screen_sendBuffer(screen.buffer);
  			}
@@ -259,6 +242,7 @@ int main (int argc, const char * argv[])	{
  				radio.receiveDataFlag = 0; //reset the flag 
  				radio.buffer_length = Read_FIFO(radio.buffer, &radio.currentMode, radio.slaveSelectPin);
  				RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // if we want to continue recieving
+                
  				char* split; 
  				char* split_string[2]; 
  				char i = 0; 
@@ -271,23 +255,10 @@ int main (int argc, const char * argv[])	{
 
     			float dist = GPS_calculate(&gps, atof(split_string[0]), atof(split_string[1])); 
     			memset(buffer,0,sizeof(buffer));
-    			FloatToStringNew(buffer,dist , 6); 
-    			serial_outputString(buffer);
-    	// 		screen_drawString(5, 50, buffer, screen.buffer);
- 				// screen_sendBuffer(screen.buffer);
-
+    			FloatToStringNew(data, dist, 6);
+    			screen_drawString(50, 30, data, screen.buffer);
 
  			}
-
-
- 			
-
-
-
- 			// screen_drawFillRectangle(10,10,30,20,1,screen.buffer);
- 			// screen_sendBuffer(screen.buffer);
-
-
  		}
 	}
 	
