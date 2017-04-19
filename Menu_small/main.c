@@ -86,7 +86,7 @@ void init()
 	LSM_init(); 
 
 	// -------------------- Heart_rate --------------------------
-	HR_init(); 
+	HR_init(); //need it to init the timer 
 
 	// -------------------- Radio ------------------------------
 	DDRD &= ~(1 << DDD2) ; 
@@ -125,11 +125,11 @@ void new_mode_test()
  		}
  		else if (mode == 3) // want to start the heart rate measuring 
  		{
- 			HR_start(&HR);
+ 			// HR_start(&HR);
  		}
  		else if (mode == 4 || mode == 2)
  		{
- 			HR_stop(&HR);
+ 			// HR_stop(&HR);
  			RFM_setMode(&radio.currentMode, 0, radio.slaveSelectPin); // idle 
  		}
  		else if (mode == 5)
@@ -166,8 +166,7 @@ int main (void)	{
 			// current step is to draw some strings
 			GPS_readSerialInput(&gps);
 			// GPS_printInfo(&gps); 
-			float temp; 
-			LSM_getTemp(&temp);
+			
 
 
  			// print out time values
@@ -196,17 +195,26 @@ int main (void)	{
  			screen_sendBuffer(screen.buffer);
  		}
  		
- 		// mode 3: track heart rate
+ 		// mode 3: display temp
 
  		else if (mode==3)	
  		{
  			
  			new_mode_test();
- 			char hr[15];
- 			sprintf(hr, "Heart Rate : %d", HR.BPM);
- 			memset(screen.buffer,0,sizeof(screen.buffer));
- 			screen_drawString(5, 30, hr, screen.buffer);
- 			screen_sendBuffer(screen.buffer);
+ 			float temp; 
+			LSM_getTemp(&temp);
+			memset(buffer,0,sizeof(buffer));
+ 			memset(data,0,sizeof(data));
+ 			FloatToStringNew(data,temp,2);
+ 			sprintf(buffer, "temp: "); 
+ 			strcat(buffer,data);
+ 			screen_drawString(5, 40, buffer, screen.buffer);
+
+ 			// char hr[15];
+ 			// sprintf(hr, "Heart Rate : %d", HR.BPM);
+ 			// memset(screen.buffer,0,sizeof(screen.buffer));
+ 			// screen_drawString(5, 30, hr, screen.buffer);
+ 			// screen_sendBuffer(screen.buffer);
  			// screen_drawFillCircle(10,10,10,1,screen.buffer);
  			// screen_sendBuffer(screen.buffer);
  		}
@@ -268,7 +276,7 @@ int main (void)	{
  				char* split; 
  				char* split_string[2]; 
  				char i = 0; 
- 				split = strtok(radio.buffer,',');
+ 				split = strtok(radio.buffer,'\n');
  				while (split != NULL)
     			{
         			split_string[i++] = split;
@@ -345,7 +353,7 @@ ISR(INT1_vect)
 // for the adc 
 ISR(ADC_vect)
 {
-	HR_read(&HR); 
+	// HR_read(&HR); 
 }
 
 ISR(TIMER1_COMPA_vect)
@@ -370,10 +378,10 @@ ISR(TIMER1_COMPA_vect)
 		}
 	}
 
-	if (mode == 3)
-	{
-		HR_calc_BPM(&HR);
-	}
+	// if (mode == 3)
+	// {
+	// 	// HR_calc_BPM(&HR);
+	// }
 
 }
 

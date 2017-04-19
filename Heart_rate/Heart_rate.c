@@ -24,7 +24,7 @@ void HR_init()
 	TIMSK1 |= (1 <<OCIE1A) ; 
 	OCR1A = 36000; // max count for 5 seconds 
 
-
+	TCCR1B |= (1 << CS12) | (1 << CS10); //this starts the timer; and sets the prescale to 1024
 	sei(); // enable global interrupts 
 
 }
@@ -42,57 +42,55 @@ void HR_start(volatile struct HR_data* HR)
 	HR->BPM = 0; 
 	
 	ADCSRA |= (1 << ADSC) ; // start the first conversion 
-	TCCR1B |= (1 << CS12) | (1 << CS10); //this starts the timer; and sets the prescale to 1024
+	// TCCR1B |= (1 << CS12) | (1 << CS10); //this starts the timer; and sets the prescale to 1024
 }
 
 void HR_stop(volatile struct HR_data* HR)
 {
 	HR->take_data = 0; 
-	TCCR1B &= ~((1 <<CS11) | (1 << CS12) | (1 << CS10)); //stopping the timer by setting the prescale to 0 
+	// TCCR1B &= ~((1 <<CS11) | (1 << CS12) | (1 << CS10)); //stopping the timer by setting the prescale to 0 
 }
 
 void HR_read(volatile struct HR_data* HR)
 {
 	HR->reading = ADCL | (ADCH << 8); 
-	char buf[20];
-	sprintf(buf,"hr : %d",HR->reading);
+	// char buf[20];
+	// sprintf(buf,"hr : %d",HR->reading);
 	// serial_outputString(buf);
 
 	// measuring count and handling the state machine 
-	if ((HR->reading > HR->threshold) && (HR->state == 0) && HR->count > 900) //600 is the current threshold 
+	if ((HR->reading > HR->threshold+80) && (HR->state == 0) && HR->count > 3200) //600 is the current threshold 
 	{
 		
 		HR->state = 1; 
 		HR->heart_count++; 
 
-		char buf[20];
-	sprintf(buf,"hr : %d",HR->count);
-	serial_outputString(buf);
-	HR->count = 0; 
+	// char buf[5];
+	// sprintf(buf,"%d",HR->count);
+	// serial_outputString(buf);
+		HR->count = 0; 
 	}
-	else if ((HR->state == 1) && (HR->reading < HR->threshold))
+	else if ((HR->state == 1) && (HR->reading < HR->threshold) && HR->count > 1000)
 	{
 		HR->state = 0; 
 		
 	}
-	else if (HR->state == 0)
+	else 
 	{
 		HR->count++; 
 	}
 
 	// this is calibrate the range of the heart rate to allow for dynamic measuring
-	if (HR->calibrate) 
+	
+	if (HR->reading > HR->max)
 	{
-		if (HR->reading > HR->max)
-		{
-			HR->max = HR->reading; 
-		}
-		else if (HR->reading < HR->min)
-		{
-			HR->min = HR->reading;
-		}
-
+		HR->max = HR->reading; 
 	}
+	else if (HR->reading < HR->min)
+	{
+		HR->min = HR->reading;
+	}
+
 
 	if (HR->take_data)
 	{
@@ -122,7 +120,7 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 	if (HR->heart_count > 4)
 	{
 		HR->last_count = HR->heart_count; 
-		HR->long_count = HR->last_count; 
+		// HR->long_count = HR->last_count; 
 	}
 	else 
 	{
@@ -132,7 +130,7 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 	
 	HR->heart_count = 0; 
 
-	if (HR->calibrate  >= 3)
+	if (HR->calibrate  >= 1)
 	{
 		HR->calibrate = 0;
 		if (HR->max == 0 || HR->min == 0)
@@ -141,7 +139,7 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 		}
 		else 
 		{
-			HR->threshold = (HR->max+HR->min-30) / 2 ;
+			HR->threshold = (HR->max+HR->min) / 2 ;
 		}
 		// HR->upper_threshold = HR->max - 100 ;
 		// HR->lower_threshold = HR->min + 200; 
@@ -150,6 +148,7 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 		// sprintf(buf,"threshold %d",HR->threshold);
 		// serial_outputString(buf);
 		HR->max = 0; 
+		HR->min = 1000;
 
 	}
 	else

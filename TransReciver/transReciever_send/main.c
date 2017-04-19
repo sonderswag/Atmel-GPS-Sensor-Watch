@@ -51,7 +51,7 @@ int main(int argc, const char * argv[]) {
 
 	sei(); // start interrupts 
 
-	char message[] = "Whats up" ;
+	char message[] = "hey,you" ;
 	
 
 	while (1)

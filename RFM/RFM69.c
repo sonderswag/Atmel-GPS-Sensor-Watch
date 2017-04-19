@@ -22,7 +22,7 @@
 // The Frequency Synthesizer step = RH_RF69_FXOSC / 2^^19
 #define RH_RF69_FSTEP  (RH_RF69_FXOSC / 524288)
 
-#define Max_Message_length 60
+#define Max_Message_length 30
 
 
 void RFM_init(char cs)
@@ -136,7 +136,7 @@ char RFM_interruptHandler(char* currentMode, char cs)
 	// serial_outputString("interrupt handeler");
 	if (*currentMode == 1 && (RFM_readReg(RH_RF69_REG_28_IRQFLAGS2,cs) & 0x04))
 	{
-		serial_outputString("new data ");
+		// serial_outputString("new data ");
 		return 1;
 	}
 	else if (*currentMode == 2)//transmit 

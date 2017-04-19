@@ -282,7 +282,7 @@ struct RFM69
 {
     char slaveSelectPin;
     char currentMode; // if 0 == sleep, 1 == rx, 2 == tx 
-    char buffer[60];
+    char buffer[30];
     char buffer_length;
     volatile char receiveDataFlag; 
 	volatile char packet_sent; 

@@ -12,9 +12,9 @@ volatile struct HR_data
 	uint8_t BPM; 
 	uint8_t heart_count;
 	uint8_t last_count; 
-	uint8_t long_count; 
+	// uint8_t long_count; 
 	uint8_t calibrate; 
-	uint8_t calibrate_count; 
+	// uint8_t calibrate_count; 
 	uint16_t count; 
 	uint16_t lower_threshold; 
 	uint16_t threshold; 

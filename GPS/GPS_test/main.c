@@ -50,11 +50,11 @@ int main(void)
 
     while (1) 
     {
-    	// serial_out(serial_in());
+    	serial_out(serial_in());
 
     	GPS_readSerialInput(&gps);
         GPS_printInfo(&gps); 
-    	_delay_ms(2000);
+    	// _delay_ms(2000);
 
 
      

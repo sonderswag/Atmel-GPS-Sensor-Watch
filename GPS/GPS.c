@@ -19,7 +19,7 @@
 char GPS_parse(struct GPS* gps)
 {
     char* split;
-    char* splitString[14];
+    char* splitString[9];
     char i = 0 ;
     split = strtok(gps->buffer,",");
     while (split != NULL)
@@ -38,11 +38,13 @@ char GPS_parse(struct GPS* gps)
     // 7 == Horizontal dilution
     // 8 == Antenna altitude
    
-    gps->fixquality = atoi(splitString[5]); 
+    // gps->fixquality = atoi(splitString[5]); 
 
     //Check to see if we are getting valid data
-    if (gps->fixquality == 0) //0 
+    // zero is bad
+    if (atoi(splitString[5]) == 0) //0 
     {
+        gps->satellites = 0; 
         return 1;
     }
      // serial_outputString(splitString[6]);
@@ -108,10 +110,11 @@ char GPS_parse(struct GPS* gps)
 void GPS_readSerialInput(struct GPS* gps)
 {
     
-    char input; 
+    uint8_t input; 
     while (1)
         {
-            input = serial_in(); 
+            input = serial_in();
+            // serial_outputString(input); 
             if (gps->state == 0)
             {
                 // serial_outputString("0");
@@ -145,7 +148,7 @@ void GPS_readSerialInput(struct GPS* gps)
             else if (gps->state == 6)
             {
 
-                if (input == 0x0D)
+                if (input == 0x0D) //\n 
                 {
                     break; 
                 }
