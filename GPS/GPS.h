@@ -6,7 +6,7 @@
 
 struct GPS
 {
-    uint8_t buffer[65]; 
+    uint8_t buffer[70]; 
     char state ; 
     uint8_t hour, minute, seconds;
 

@@ -70,7 +70,7 @@ void HR_read(volatile struct HR_data* HR)
 	// serial_outputString(buf);
 		HR->count = 0; 
 	}
-	else if ((HR->state == 1) && (HR->reading < HR->threshold) && HR->count > 1000)
+	else if ((HR->state == 1) && (HR->reading < HR->threshold) && HR->count > 1200)
 	{
 		HR->state = 0; 
 		

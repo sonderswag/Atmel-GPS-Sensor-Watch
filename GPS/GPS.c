@@ -10,7 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>	//test this
-
+#include <util/delay.h>
+#include <avr/interrupt.h>
 
 #include "GPS.h"
 #include "../Serial/serial.h"
@@ -21,6 +22,7 @@ char GPS_parse(struct GPS* gps)
     char* split;
     char* splitString[9];
     char i = 0 ;
+    cli();
     split = strtok(gps->buffer,",");
     while (split != NULL)
     {
@@ -104,6 +106,7 @@ char GPS_parse(struct GPS* gps)
 
 
     // GPS_printInfo(gps); 
+    sei();
     return 0;
 }
 
@@ -111,6 +114,7 @@ void GPS_readSerialInput(struct GPS* gps)
 {
     
     uint8_t input; 
+    cli();
     while (1)
         {
             input = serial_in();
@@ -155,8 +159,9 @@ void GPS_readSerialInput(struct GPS* gps)
                 gps->buffer[gps->sizeInputString++] = input; 
             }
         }
-        // serial_outputString(gps->buffer); 
 
+        // serial_outputString(gps->buffer); 
+        sei();
         GPS_parse(gps); 
    
         gps->state = 0; 
@@ -168,18 +173,18 @@ void GPS_readSerialInput(struct GPS* gps)
 
 void GPS_printInfo(struct GPS* gps)
 {
-    char buffer[50]; 
+    char buffer[30]; 
 
     FloatToStringNew(buffer,gps->longitude , 6); 
-    serial_outputString("longitude: ");
+    serial_outputString("lon ");
     serial_outputString(buffer);
 
     FloatToStringNew(buffer,gps->latitude , 6); 
-    serial_outputString("latitude: ");
+    serial_outputString("lat ");
     serial_outputString(buffer);
 
     FloatToStringNew(buffer,gps->altitude , 1); 
-    serial_outputString("Altitude: ");
+    serial_outputString("Alt ");
     serial_outputString(buffer);
 
     sprintf(buffer, "hour %d, min %d, sec %d", gps->hour, gps->minute, gps->seconds);

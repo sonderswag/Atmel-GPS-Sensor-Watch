@@ -106,6 +106,7 @@ void init()
 	RFM_init(radio.slaveSelectPin);
 
 
+
 }
 
 
@@ -113,29 +114,14 @@ void new_mode_test()
 {
 	if (new_mode)
 	{
+
+ 		// sprintf(buffer,"mode: %d",mode);
+		// serial_outputString(buffer);	
 		new_mode = 0; 
 		memset(screen.buffer,0,1024);
  		screen_sendBuffer(screen.buffer);
  		_delay_ms(2); 
  		radio.packet_sent = 0;
-
- 		if (mode == 1)
- 		{
- 			RFM_setMode(&radio.currentMode, 0, radio.slaveSelectPin); 
- 		}
- 		else if (mode == 3) // want to start the heart rate measuring 
- 		{
- 			// HR_start(&HR);
- 		}
- 		else if (mode == 4 || mode == 2)
- 		{
- 			// HR_stop(&HR);
- 			RFM_setMode(&radio.currentMode, 0, radio.slaveSelectPin); // idle 
- 		}
- 		else if (mode == 5)
- 		{
- 			RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // RX
- 		}
 	}
 	else 
 	{
@@ -148,7 +134,7 @@ int main (void)	{
 	init();
 	sei();
 
-
+		
 	// mode settings
 	// mode = 1 --> read GPS data and time
 	// mode = 2 --> track number of steps
@@ -157,9 +143,9 @@ int main (void)	{
 	while(1)	
 	{
 		//_delay_ms(50);
-		// int a;
-		// for (a=0; a<=5000; a++)	
-		// { }
+		uint16_t a;
+		for (a=0; a<=5000; a++)	
+		{ }
 		if (mode==1)	// this is to show 
 		{			
 			new_mode_test();
@@ -170,16 +156,21 @@ int main (void)	{
 
 
  			// print out time values
- 			memset(screen.buffer,0,sizeof(screen.buffer));
- 			sprintf(buffer, "hour %d, min %d, sec %d", gps.hour, gps.minute, gps.seconds);
- 			screen_drawString(5, 30, buffer, screen.buffer); 
-
+ 			
  			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer, "%d:%d:%d", gps.hour, gps.minute, gps.seconds);
+ 			screen_drawString(50, 30, buffer, screen.buffer);  
+
  			memset(data,0,sizeof(data));
- 			FloatToStringNew(data,temp,2);
- 			sprintf(buffer, "temp: "); 
- 			strcat(buffer,data);
- 			screen_drawString(5, 40, buffer, screen.buffer);
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+
+ 			// memset(buffer,0,sizeof(buffer));
+ 			// memset(data,0,sizeof(data));
+ 			// FloatToStringNew(data,temp,2);
+ 			// sprintf(buffer, "temp: "); 
+ 			// strcat(buffer,data);
+ 			// screen_drawString(5, 40, buffer, screen.buffer);
 
 
  			screen_sendBuffer(screen.buffer);
@@ -189,10 +180,18 @@ int main (void)	{
  		else if (mode==2)	
  		{
  			new_mode_test();
+ 			sei();
  			sprintf(buffer, "steps : %d", steps);
- 			screen_clear(screen.buffer);
+ 			memset(screen.buffer,0,sizeof(screen.buffer));
  			screen_drawString(5, 30, buffer, screen.buffer);
+
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+
  			screen_sendBuffer(screen.buffer);
+ 			sei();
+
  		}
  		
  		// mode 3: display temp
@@ -209,7 +208,12 @@ int main (void)	{
  			sprintf(buffer, "temp: "); 
  			strcat(buffer,data);
  			screen_drawString(5, 40, buffer, screen.buffer);
+ 			screen_sendBuffer(screen.buffer);
 
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+ 			
  			// char hr[15];
  			// sprintf(hr, "Heart Rate : %d", HR.BPM);
  			// memset(screen.buffer,0,sizeof(screen.buffer));
@@ -248,6 +252,11 @@ int main (void)	{
 		    memset(data,0,sizeof(data));
  			sprintf(buffer, "satellites %d",gps.satellites); 
  			screen_drawString(5, 50, buffer, screen.buffer);
+
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+
  			screen_sendBuffer(screen.buffer);
  		}
 
@@ -259,36 +268,62 @@ int main (void)	{
  			new_mode_test(); 
  			GPS_readSerialInput(&gps); 	
 
- 			if (radio.currentMode = 1)
- 			{
- 				memset(buffer,0,sizeof(buffer));
- 				sprintf(buffer,"dist: ");
- 				screen_drawString(5, 30, buffer, screen.buffer);
- 				screen_sendBuffer(screen.buffer);
- 			}
+ 			//to get acutal gps location
+
+ 			// memset(buffer,0,sizeof(buffer)); 
+ 			// memset(data,0,sizeof(data)); 	
+ 			// FloatToStringNew(data,gps.latitude,6);
+ 			// strcat(buffer,data);
+ 			// strcat(buffer,",");
+ 			// memset(data,0,sizeof(data)); 
+ 			// FloatToStringNew(data,gps.longitude,6);
+ 			// strcat(buffer,data);
+
+ 			//for fake locaiton 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"-118.28814,34.024212");
+
+
+
+ 			RFM_send(buffer,&radio.currentMode, sizeof(buffer), radio.slaveSelectPin);
+
+ 			// if (radio.currentMode = 1)
+ 			// {
+ 			// 	memset(buffer,0,sizeof(buffer));
+ 			// 	sprintf(buffer,"dist: ");
+ 			// 	screen_drawString(5, 30, buffer, screen.buffer);
+ 			// 	screen_sendBuffer(screen.buffer);
+ 			// }
  		
- 			if (radio.receiveDataFlag)
- 			{
- 				radio.receiveDataFlag = 0; //reset the flag 
- 				radio.buffer_length = Read_FIFO(radio.buffer, &radio.currentMode, radio.slaveSelectPin);
- 				RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // if we want to continue recieving
+ 			// if (radio.receiveDataFlag)
+ 			// {
+ 			// 	radio.receiveDataFlag = 0; //reset the flag 
+ 			// 	radio.buffer_length = Read_FIFO(radio.buffer, &radio.currentMode, radio.slaveSelectPin);
+ 			// 	RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // if we want to continue recieving
                 
- 				char* split; 
- 				char* split_string[2]; 
- 				char i = 0; 
- 				split = strtok(radio.buffer,'\n');
- 				while (split != NULL)
-    			{
-        			split_string[i++] = split;
-        			split = strtok(NULL, ",");
-    			}
+ 			// 	char* split; 
+ 			// 	char* split_string[2]; 
+ 			// 	char i = 0; 
+ 			// 	split = strtok(radio.buffer,'\n');
+ 			// 	while (split != NULL)
+    // 			{
+    //     			split_string[i++] = split;
+    //     			split = strtok(NULL, ",");
+    // 			}
 
-    			// float dist = GPS_calculate(&gps, atof(split_string[0]), atof(split_string[1])); 
-    			memset(buffer,0,sizeof(buffer));
-    			// FloatToStringNew(data, dist, 6);
-    			screen_drawString(50, 30, split_string[0], screen.buffer);
+    // 			// float dist = GPS_calculate(&gps, atof(split_string[0]), atof(split_string[1])); 
+    // 			memset(buffer,0,sizeof(buffer));
+    // 			// FloatToStringNew(data, dist, 6);
+    // 			screen_drawString(50, 30, split_string[0], screen.buffer);
 
- 			}
+ 			// }
+
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(110, 50, data, screen.buffer);  
+ 			screen_sendBuffer(screen.buffer);
+
+
  		}
 	}
 	
@@ -306,9 +341,9 @@ ISR(PCINT2_vect)
 		// char bufferbut[10];
 		// sprintf(bufferbut,"redbut %d",mode);
 		// serial_outputString(bufferbut);	
-		_delay_ms(1);
+		_delay_ms(2);
 		while ((PIND & redbut)==0)	{}
-		_delay_ms(1);
+		_delay_ms(2);
 	}
 	
 	else if ((PIND & greenbut)==0)	
@@ -320,9 +355,9 @@ ISR(PCINT2_vect)
 		// char bufferbut[10];
 		// sprintf(bufferbut,"green %d",mode);
 		// serial_outputString(bufferbut);	
-		_delay_ms(1);
+		_delay_ms(2);
 		while ((PIND & greenbut)==0)	{}
-		_delay_ms(1);
+		_delay_ms(2);
 	}
 }
 
@@ -335,11 +370,11 @@ ISR(PCINT0_vect)
 			mode = 1;
 		}
 		// char bufferbut[10];
-		// sprintf(bufferbut,"blue %d",mode);
-		// serial_outputString(bufferbut);	
-		_delay_ms(1);
+		// sprintf(buffer,"blue %d",mode);
+		// serial_outputString(buffer);	
+		_delay_ms(2);
 		while ((PINB & bluebut)==0)	{}
-		_delay_ms(1);
+		_delay_ms(2);
 	}
 }
 

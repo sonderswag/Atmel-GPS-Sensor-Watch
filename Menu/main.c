@@ -157,11 +157,12 @@ int main (void)	{
 	while(1)	
 	{
 		//_delay_ms(50);
-		// int a;
-		// for (a=0; a<=5000; a++)	
-		// { }
+		uint16_t a;
+		for (a=0; a<=5000; a++)	
+		{ }
 		if (mode==1)	// this is to show 
 		{			
+
 			new_mode_test();
 			// current step is to draw some strings
 			GPS_readSerialInput(&gps);
@@ -172,8 +173,11 @@ int main (void)	{
 
  			// print out time values
  			memset(screen.buffer,0,sizeof(screen.buffer));
- 			sprintf(buffer, "hour %d, min %d, sec %d", gps.hour, gps.minute, gps.seconds);
- 			screen_drawString(5, 30, buffer, screen.buffer); 
+ 			memset(data,0,sizeof(data));
+ 			sprintf(buffer, "%d:%d:%d", gps.hour, gps.minute, gps.seconds);
+
+
+ 			screen_drawString(50, 30, buffer, screen.buffer); 
 
  			memset(buffer,0,sizeof(buffer));
  			memset(data,0,sizeof(data));
@@ -182,6 +186,9 @@ int main (void)	{
  			strcat(buffer,data);
  			screen_drawString(5, 40, buffer, screen.buffer);
 
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(110, 50, data, screen.buffer);  
 
  			screen_sendBuffer(screen.buffer);
  		}
@@ -193,6 +200,11 @@ int main (void)	{
  			sprintf(buffer, "steps : %d", steps);
  			screen_clear(screen.buffer);
  			screen_drawString(5, 30, buffer, screen.buffer);
+
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+
  			screen_sendBuffer(screen.buffer);
  		}
  		
@@ -206,6 +218,11 @@ int main (void)	{
  			sprintf(hr, "Heart Rate : %d", HR.BPM);
  			memset(screen.buffer,0,sizeof(screen.buffer));
  			screen_drawString(5, 30, hr, screen.buffer);
+
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+
  			screen_sendBuffer(screen.buffer);
  			// screen_drawFillCircle(10,10,10,1,screen.buffer);
  			// screen_sendBuffer(screen.buffer);
@@ -240,6 +257,11 @@ int main (void)	{
 		    memset(data,0,sizeof(data));
  			sprintf(buffer, "satellites %d",gps.satellites); 
  			screen_drawString(5, 50, buffer, screen.buffer);
+
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+
  			screen_sendBuffer(screen.buffer);
  		}
 
@@ -256,7 +278,7 @@ int main (void)	{
  				memset(buffer,0,sizeof(buffer));
  				sprintf(buffer,"dist: ");
  				screen_drawString(5, 30, buffer, screen.buffer);
- 				screen_sendBuffer(screen.buffer);
+ 				
  			}
  		
  			if (radio.receiveDataFlag)
@@ -265,22 +287,27 @@ int main (void)	{
  				radio.buffer_length = Read_FIFO(radio.buffer, &radio.currentMode, radio.slaveSelectPin);
  				RFM_setMode(&radio.currentMode, 1, radio.slaveSelectPin); // if we want to continue recieving
                 
- 				char* split; 
- 				char* split_string[2]; 
+ 				char* token; 
+ 				char* token_list[2]; 
  				char i = 0; 
- 				split = strtok(radio.buffer,',');
- 				while (split != NULL)
+ 				token = strtok(radio.buffer,",");
+ 				while (token != NULL)
     			{
-        			split_string[i++] = split;
-        			split = strtok(NULL, ",");
+        			token_list[i++] = token;
+        			token = strtok(NULL, ",");
     			}
 
     			// float dist = GPS_calculate(&gps, atof(split_string[0]), atof(split_string[1])); 
-    			memset(buffer,0,sizeof(buffer));
+    			// memset(buffer,0,sizeof(buffer));
     			// FloatToStringNew(data, dist, 6);
-    			screen_drawString(50, 30, split_string[0], screen.buffer);
+    			screen_drawString(50, 30, token_list[0], screen.buffer);
 
  			}
+
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"%d",mode);
+ 			screen_drawString(120, 50, data, screen.buffer);  
+ 			screen_sendBuffer(screen.buffer);
  		}
 	}
 	
