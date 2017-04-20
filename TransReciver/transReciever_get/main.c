@@ -17,6 +17,7 @@
 #include "../../Serial/serial.h"
 
 #define Serial_rate 47
+#define slaveSelectPin 24
 
 struct RFM69 radio; 
 
@@ -38,17 +39,15 @@ int main(int argc, const char * argv[]) {
 	spi_init_master(); // SPI 
 	
 	// Radio Initalize and constants 
-	radio.slaveSelectPin = 24; 
 	radio.currentMode = 0; 
-	radio.buffer_length = 0;
 	radio.packet_sent = 0; 	
 	
-	RFM_spiConfig(radio.slaveSelectPin) ;
-	RFM_init(radio.slaveSelectPin);
+	RFM_spiConfig(slaveSelectPin) ;
+	RFM_init(slaveSelectPin);
 
 	//--------------------------------------------------------
 
-	RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // RX
+	RFM_setMode(&radio.currentMode,1,slaveSelectPin); // RX
 
 	while (1)
 	{	
@@ -57,9 +56,9 @@ int main(int argc, const char * argv[]) {
 		{
 			// need these three functions in this order to work. 
 			radio.receiveDataFlag = 0; //reset the flag 
-			radio.buffer_length = Read_FIFO(radio.buffer,&radio.currentMode, radio.slaveSelectPin);
+			Read_FIFO(radio.buffer,&radio.currentMode, slaveSelectPin);
 			// have to do this after receiving somehting 
-			RFM_setMode(&radio.currentMode,1,radio.slaveSelectPin); // set mode to RX
+			RFM_setMode(&radio.currentMode,1,slaveSelectPin); // set mode to RX
 
 			serial_outputString(radio.buffer); 
 		}
@@ -79,6 +78,6 @@ ISR(INT0_vect)
 {
 	// serial_outputString("I ");
 
-		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, radio.slaveSelectPin) ;
+		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, slaveSelectPin) ;
 
 }

@@ -45,20 +45,18 @@ int main(void)
  	UBRR = 47 
  	*/
 	serial_init(47);
-	gps.sizeInputString = 0; 
-	gps.state = 0;
+	// gps.sizeInputString = 0; 
+	// gps.state = 0;
 
     while (1) 
     {
-    	serial_out(serial_in());
+    	// serial_out(serial_in());
 
     	GPS_readSerialInput(&gps);
         GPS_printInfo(&gps); 
     	// _delay_ms(2000);
 
 
-     
-	
  	}
 
 	

@@ -10,6 +10,7 @@
 #include <util/delay.h>
 #include <avr/io.h> 
 #include <avr/interrupt.h>
+#include <string.h> 
 
 #include "../../Digital_IO/DigitalIo.h"
 #include "../../RFM/RFM69.h"
@@ -17,7 +18,7 @@
 #include "../../Serial/serial.h"
 
 #define Serial_rate 47
-
+#define slaveSelectPin 24 
 void interruptInit()
 {
 	DDRD &= ~(1 <<DDD2) ; 
@@ -39,13 +40,13 @@ int main(int argc, const char * argv[]) {
 	spi_init_master(); // SPI 
 	
 	// Radio Initalize and constants 
-	radio.slaveSelectPin = 24; 
+	// radio.slaveSelectPin = 24; 
 	radio.currentMode = 0; 
-	radio.buffer_length = 0;
+	// radio.buffer_length = 0;
 	radio.packet_sent = 0; 	
 	
-	RFM_spiConfig(radio.slaveSelectPin) ;
-	RFM_init(radio.slaveSelectPin);
+	RFM_spiConfig(slaveSelectPin) ;
+	RFM_init(slaveSelectPin);
 
 	//--------------------------------------------------------
 
@@ -58,7 +59,7 @@ int main(int argc, const char * argv[]) {
 	{
 		// serial_outputString(radio.buffer);
 
-		RFM_send(message,&radio.currentMode, sizeof(message), radio.slaveSelectPin);
+		RFM_send(message,&radio.currentMode, sizeof(message), slaveSelectPin);
 
 
 		_delay_ms(1);
@@ -74,6 +75,6 @@ ISR(INT0_vect)
 {
 	serial_outputString("I ");
 	// set to idle
-	radio.packet_sent = RFM_interruptHandler(&radio.currentMode,radio.slaveSelectPin);
+	radio.packet_sent = RFM_interruptHandler(&radio.currentMode,slaveSelectPin);
 
 }

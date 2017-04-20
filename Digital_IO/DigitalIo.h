@@ -2,7 +2,7 @@
 #ifndef DigitalIo_h
 #define DigitalIo_h
 
-#endif 
+
 
 #include <avr/io.h>
 
@@ -15,3 +15,5 @@
 void digitalWrite(char port, char state);
 char digitalRead(char port);
 void pinMode(char port, char mode);
+
+#endif 

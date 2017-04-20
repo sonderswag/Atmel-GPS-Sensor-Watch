@@ -228,7 +228,7 @@ void LSM_getTemp(float* temp)
 
 	i2c_stop();
 
-	*temp = (25+(float)tempData/8)*(9/5.0)+32;
+	*temp = (28+(float)tempData/8)*(9/5.0)+32;
 	sei(); 
 
 }

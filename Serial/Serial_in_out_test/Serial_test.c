@@ -51,7 +51,7 @@ int main ()	{
 		
 		if (temp != 0 )
 		{
-			// sprintf(str, "You entered = %c \r\n", temp);make 
+			sprintf(str, "You entered = %c \r\n", temp);
 			outputString(str);
 			
 		}

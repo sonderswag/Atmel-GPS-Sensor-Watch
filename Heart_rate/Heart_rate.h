@@ -16,7 +16,7 @@ volatile struct HR_data
 	uint8_t calibrate; 
 	// uint8_t calibrate_count; 
 	uint16_t count; 
-	uint16_t lower_threshold; 
+	// uint16_t lower_threshold; 
 	uint16_t threshold; 
 
 };

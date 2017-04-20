@@ -10,7 +10,7 @@
 #define RFM69_h
 
 
-#endif /* RFM69_h */
+
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -280,10 +280,10 @@ last byte transfer.
 
 struct RFM69
 {
-    char slaveSelectPin;
+    // char slaveSelectPin;
     char currentMode; // if 0 == sleep, 1 == rx, 2 == tx 
     char buffer[30];
-    char buffer_length;
+    // char buffer_length;
     volatile char receiveDataFlag; 
 	volatile char packet_sent; 
     
@@ -322,3 +322,5 @@ void RFM_setHighPower(char onOff, char cs);
 int RFM_readRSSI(char cs) ; 
 
 char RFM_interruptHandler(char* currentMode, char cs)  ;
+
+#endif /* RFM69_h */

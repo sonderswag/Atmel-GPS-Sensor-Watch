@@ -1,19 +1,14 @@
 
 #ifndef GPS_h
 #define GPS_h 
-#endif 
-
 
 struct GPS
 {
-    uint8_t buffer[70]; 
-    char state ; 
+    char buffer[70];
     uint8_t hour, minute, seconds;
 
    
     uint8_t satellites;
-
-    char sizeInputString; 
 
     float latitude, longitude, altitude; 
 };
@@ -25,4 +20,7 @@ void GPS_parseLocation(const char* latitude, const char* dirNS,
 
 char GPS_parse(struct GPS* gps); 
 void GPS_readSerialInput(struct GPS* gps); 
+void GPS_printInfo(struct GPS* gps);
 float GPS_calculate(struct GPS* gps1, float lat_2, float log_2);
+
+#endif 

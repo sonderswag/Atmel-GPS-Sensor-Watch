@@ -24,6 +24,7 @@ char GPS_parse(struct GPS* gps)
     char i = 0 ;
     cli();
     split = strtok(gps->buffer,",");
+    split = strtok(NULL,",");
     while (split != NULL)
     {
         splitString[i++] = split;
@@ -44,41 +45,43 @@ char GPS_parse(struct GPS* gps)
 
     //Check to see if we are getting valid data
     // zero is bad
-    if (atoi(splitString[5]) == 0) //0 
+    if (strcmp(splitString[2],"0") == 0) //0 
     {
         gps->satellites = 0; 
         return 1;
     }
-     // serial_outputString(splitString[6]);
-    // serial_outputString('active');
     
     /* ------------------- Parse the time ---------------------- */
     // // splitString[0] == time data
 
-    char hour[3] = {splitString[0][0],splitString[0][1]};
-    char min[3]  = {splitString[0][2],splitString[0][3]};
-    char sec[3]  = {splitString[0][4],splitString[0][5]}; 
+    char buf[5] = {splitString[0][0],splitString[0][1]};
 
-    gps->hour    = atoi(hour);
+
+
+
+    gps->hour    = atoi(buf);
     if (gps->hour < 9)
     {
         gps->hour += 17; 
-
     }
     else 
     {
         gps->hour -= 7; 
     }
-    gps->minute  = atoi(min);
-    gps->seconds = atoi(sec); 
+
+    memset(buf,0,sizeof(buf)); 
+    strncpy(buf,&(splitString[0][2]),2); 
+    gps->minute  = atoi(buf);
+
+    memset(buf,0,sizeof(buf)); 
+    strncpy(buf,&(splitString[0][4]),2); 
+    gps->seconds = atoi(buf); 
 
     //  ------------------- Parse Location ---------------------- 
-    char lat[3] = {splitString[1][0], splitString[1][1]};
-
-    char degrees = atoi(lat); 
-    float minutes = atof(&(splitString[1][2])); 
-    minutes = minutes/60 ;
-    gps->latitude = degrees+minutes;
+    // latitude 
+    memset(buf,0,sizeof(buf)); 
+    strncpy(buf,splitString[1],2); 
+    gps->latitude = atoi(buf) +atof(&(splitString[1][2]))/60.0;
 
 
     if (strcmp(splitString[2],"S") == 0) // S
@@ -87,12 +90,11 @@ char GPS_parse(struct GPS* gps)
     }
 
 
-    char log[4] = {splitString[3][0], splitString[3][1], splitString[3][2]};
+    memset(buf,0,sizeof(buf)); 
+    // longitude 
+    strncpy(buf,splitString[3],3); 
 
-    degrees = atoi(log); 
-    minutes = atof(&(splitString[3][3])); 
-    minutes = minutes/60 ;
-    gps->longitude = degrees+minutes; 
+    gps->longitude = atoi(buf)+atof(&(splitString[3][3]))/60.0; 
 
     if (strcmp(splitString[4],"W") == 0) //W 
     {
@@ -113,59 +115,42 @@ char GPS_parse(struct GPS* gps)
 void GPS_readSerialInput(struct GPS* gps)
 {
     
-    uint8_t input; 
+    char input; 
+    char state =0; 
+    char place = 0; 
     cli();
-    while (1)
-        {
-            input = serial_in();
-            // serial_outputString(input); 
-            if (gps->state == 0)
-            {
-                // serial_outputString("0");
-                if (input == 0x24) gps->state = 1 ; //$
-            }
-            else if (gps->state == 1)
-            {
-                if (input == 0x47) gps->state = 2 ; //G
-                else gps->state = 0; 
-            }
-            else if (gps->state == 2)
-            {
-                if (input == 0x50) gps->state = 3; //P
-                else gps->state = 0; 
-            }
-            else if (gps->state == 3)
-            {
-                if (input == 0x47) gps->state = 4; //G
-                else gps->state = 0; 
-            }
-            else if (gps->state == 4)
-            {
-                if (input == 0x47) gps->state = 5; //G
-                else gps->state = 0; 
-            }
-            else if (gps->state == 5)
-            {
-                if (input == 0x41) gps->state = 6; //A
-                else gps->state = 0; 
-            }
-            else if (gps->state == 6)
-            {
+    memset(gps->buffer,0,sizeof(gps->buffer));
 
-                if (input == 0x0D) //\n 
-                {
-                    break; 
-                }
-                gps->buffer[gps->sizeInputString++] = input; 
-            }
+    while(1)
+    {
+        input = serial_in(); 
+        // serial_out(input);
+        if (input == 0x47 && state == 0) // $
+        {
+            state = 1; 
         }
 
-        // serial_outputString(gps->buffer); 
-        sei();
-        GPS_parse(gps); 
-   
-        gps->state = 0; 
-        gps->sizeInputString = 0; 
+        if ((input == 0x0D || place == 69) && state == 1) // newline 
+        {
+            state = 0; 
+            place = 0;
+
+            if (strncmp(gps->buffer,"GPGGA",5) == 0)
+            {
+                break; 
+            } 
+        }
+
+        else if (state == 1) //message 
+        {
+            // serial_out(input);
+            gps->buffer[place++] = input; 
+        }
+    }
+    // serial_outputString(gps->buffer); 
+    GPS_parse(gps); 
+
+    sei();
 
 }
 
@@ -173,25 +158,32 @@ void GPS_readSerialInput(struct GPS* gps)
 
 void GPS_printInfo(struct GPS* gps)
 {
-    char buffer[30]; 
+    cli(); 
+    char buffer[20]; 
 
+    memset(buffer,0,sizeof(buffer));
     FloatToStringNew(buffer,gps->longitude , 6); 
     serial_outputString("lon ");
     serial_outputString(buffer);
 
+    memset(buffer,0,sizeof(buffer));
     FloatToStringNew(buffer,gps->latitude , 6); 
     serial_outputString("lat ");
     serial_outputString(buffer);
 
+    memset(buffer,0,sizeof(buffer));
     FloatToStringNew(buffer,gps->altitude , 1); 
     serial_outputString("Alt ");
     serial_outputString(buffer);
 
-    sprintf(buffer, "hour %d, min %d, sec %d", gps->hour, gps->minute, gps->seconds);
+    memset(buffer,0,sizeof(buffer));
+    sprintf(buffer, "%d:%d:%d", gps->hour, gps->minute, gps->seconds);
     serial_outputString(buffer); 
 
+    memset(buffer,0,sizeof(buffer));
     sprintf(buffer, "satellites %d",gps->satellites); 
     serial_outputString(buffer); 
+    sei();
 
 }
 

@@ -13,8 +13,6 @@
 #include <avr/io.h>
 #include <stdint.h>
 
-
-
 // default clock is div 16 
 #define SPI_CLOCK_DIV4 0x00
 #define SPI_CLOCK_DIV16 0x01

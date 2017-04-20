@@ -21,6 +21,7 @@
 
 #define ON 1 
 #define OFF 0 
+#define slaveSelectPin 24
 
 //global variables
 uint8_t mode = 1;		//float so can print out for testing
@@ -70,8 +71,8 @@ void init()
 	// -------------------- GPS --------------------------
 
 	// initialize GPS values
-	gps.sizeInputString = 0; 
-	gps.state = 0;
+	// gps.sizeInputString = 0; 
+	// gps.state = 0;
 	gps.hour = 12; 
 	gps.minute = 0;
 	gps.seconds = 0; 
@@ -96,14 +97,14 @@ void init()
 	EIMSK |= (1 << INT0); 
 	PCMSK0 |= 0x80;
 
-	radio.slaveSelectPin = 24;
+	// radio.slaveSelectPin = 24;
 	radio.currentMode = 0;
-	radio.buffer_length = 0;
+	// radio.buffer_length = 0;
 	radio.packet_sent = 0;
-	gps.sizeInputString = 0; 
-	RFM_spiConfig(radio.slaveSelectPin);
+ 
+	RFM_spiConfig(slaveSelectPin);
 	spi_init_master();			// SPI
-	RFM_init(radio.slaveSelectPin);
+	RFM_init(slaveSelectPin);
 
 
 
@@ -165,13 +166,10 @@ int main (void)	{
  			sprintf(data,"%d",mode);
  			screen_drawString(120, 50, data, screen.buffer);  
 
- 			// memset(buffer,0,sizeof(buffer));
- 			// memset(data,0,sizeof(data));
- 			// FloatToStringNew(data,temp,2);
- 			// sprintf(buffer, "temp: "); 
- 			// strcat(buffer,data);
- 			// screen_drawString(5, 40, buffer, screen.buffer);
-
+ 			if (gps.satellites == 0)
+ 			{
+ 				screen_drawFillCircle(120, 10, 2, ON, screen.buffer);
+ 			}
 
  			screen_sendBuffer(screen.buffer);
  		}
@@ -188,6 +186,11 @@ int main (void)	{
  			memset(data,0,sizeof(data));
  			sprintf(data,"%d",mode);
  			screen_drawString(120, 50, data, screen.buffer);  
+
+ 			if (gps.satellites == 0)
+ 			{
+ 				screen_drawFillCircle(120, 10, 2, ON, screen.buffer);
+ 			}
 
  			screen_sendBuffer(screen.buffer);
  			sei();
@@ -208,11 +211,21 @@ int main (void)	{
  			sprintf(buffer, "temp: "); 
  			strcat(buffer,data);
  			screen_drawString(5, 40, buffer, screen.buffer);
- 			screen_sendBuffer(screen.buffer);
+ 			
+
 
  			memset(data,0,sizeof(data));
  			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			screen_drawString(120, 50, data, screen.buffer); 
+
+
+ 			if (gps.satellites == 0)
+ 			{
+ 				screen_drawFillCircle(120, 10, 2, ON, screen.buffer);
+ 			}
+
+
+ 			screen_sendBuffer(screen.buffer);
  			
  			// char hr[15];
  			// sprintf(hr, "Heart Rate : %d", HR.BPM);
@@ -233,19 +246,19 @@ int main (void)	{
 			GPS_readSerialInput(&gps);
 			memset(data,0,sizeof(data));
  		    FloatToStringNew(data,gps.longitude , 6); 
-		    sprintf(buffer,"Longitude: ");
+		    sprintf(buffer,"longitude: ");
 		    strcat(buffer,data); 
 		    screen_drawString(5, 5, buffer, screen.buffer);
 			
 			memset(data,0,sizeof(data));
 		    FloatToStringNew(data,gps.latitude , 6); 
-		    sprintf(buffer,"Latitude: ");
+		    sprintf(buffer,"latitude: ");
 		    strcat(buffer,data); 
 		    screen_drawString(5, 20, buffer, screen.buffer);
 			
 			memset(data,0,sizeof(data));
 		    FloatToStringNew(data,gps.altitude , 1); 
-		    sprintf(buffer,"Altitude: ");
+		    sprintf(buffer,"altitude: ");
 		    strcat(buffer,data); 
 		    screen_drawString(5, 35, buffer, screen.buffer);
 
@@ -255,7 +268,14 @@ int main (void)	{
 
  			memset(data,0,sizeof(data));
  			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			screen_drawString(110, 50, data, screen.buffer);  
+
+
+ 			if (gps.satellites == 0)
+ 			{
+ 				screen_drawFillCircle(120, 10, 2, ON, screen.buffer);
+ 			}
+
 
  			screen_sendBuffer(screen.buffer);
  		}
@@ -285,7 +305,7 @@ int main (void)	{
 
 
 
- 			RFM_send(buffer,&radio.currentMode, sizeof(buffer), radio.slaveSelectPin);
+ 			RFM_send(buffer,&radio.currentMode, sizeof(buffer), slaveSelectPin);
 
  			// if (radio.currentMode = 1)
  			// {
@@ -321,6 +341,13 @@ int main (void)	{
  			memset(data,0,sizeof(data));
  			sprintf(data,"%d",mode);
  			screen_drawString(110, 50, data, screen.buffer);  
+
+
+ 			if (gps.satellites == 0)
+ 			{
+ 				screen_drawFillCircle(120, 10, 2, ON, screen.buffer);
+ 			}
+
  			screen_sendBuffer(screen.buffer);
 
 
@@ -425,11 +452,11 @@ ISR(INT0_vect) {
 	// sets to idle, which is needed to know which packet was sent
 	if (radio.currentMode == 2) // if in transmit 
 	{
-		radio.packet_sent = RFM_interruptHandler(&radio.currentMode, radio.slaveSelectPin);
+		radio.packet_sent = RFM_interruptHandler(&radio.currentMode, slaveSelectPin);
 	}
 	else if (radio.currentMode == 1) // reciever 
 	{
-		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, radio.slaveSelectPin) ;
+		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, slaveSelectPin) ;
 	}
 }
 
