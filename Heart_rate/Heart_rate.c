@@ -38,7 +38,6 @@ void HR_start(volatile struct HR_data* HR)
 	HR->heart_count = 0; 
 	HR->last_count = 0;
 	HR->take_data = 1; 
-	HR->calibrate = 10; 
 	HR->BPM = 0; 
 	
 	ADCSRA |= (1 << ADSC) ; // start the first conversion 
@@ -59,7 +58,7 @@ void HR_read(volatile struct HR_data* HR)
 	// serial_outputString(buf);
 
 	// measuring count and handling the state machine 
-	if ((HR->reading > HR->threshold+80) && (HR->state == 0) && HR->count > 3200) //600 is the current threshold 
+	if ((HR->reading > HR->threshold+90) && (HR->state == 0) && HR->count > 3200) //600 is the current threshold 
 	{
 		
 		HR->state = 1; 
@@ -70,7 +69,7 @@ void HR_read(volatile struct HR_data* HR)
 	// serial_outputString(buf);
 		HR->count = 0; 
 	}
-	else if ((HR->state == 1) && (HR->reading < HR->threshold) && HR->count > 1200)
+	else if ((HR->state == 1) && (HR->reading < HR->threshold) && HR->count > 1500)
 	{
 		HR->state = 0; 
 		
@@ -124,18 +123,16 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 	}
 	else 
 	{
-		HR->calibrate  = 5;
 		HR->last_count = 0;
 	}
 	
 	HR->heart_count = 0; 
 
-	if (HR->calibrate  >= 1)
-	{
-		HR->calibrate = 0;
+
 		if (HR->max == 0 || HR->min == 0)
 		{
-			HR->threshold = 550; 
+// 			HR->threshold = 550; 
+			
 		}
 		else 
 		{
@@ -150,11 +147,6 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 		HR->max = 0; 
 		HR->min = 1000;
 
-	}
-	else
-	{
-		 HR->calibrate++; 
-	}
 
 }
 

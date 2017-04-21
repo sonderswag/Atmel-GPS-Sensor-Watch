@@ -24,6 +24,9 @@
 
 #define slaveSelectPin 24
 //global variables
+
+
+
 uint8_t mode = 1;		//float so can print out for testing
 uint8_t new_mode = 1; 	// this is a flag for entering into a new mode 
 uint16_t steps = 0;		// step counter
@@ -35,9 +38,10 @@ struct RFM69 radio;
 
 char data[15]; 
 char buffer[23];
-
 // heart rate struct
-volatile struct HR_data HR = {0,0,0,0,0,0,0,0,0,0};
+volatile struct HR_data HR;
+
+
 
 void init()
 {
@@ -86,6 +90,7 @@ void init()
 
 	// -------------------- Heart_rate --------------------------
 	HR_init(); 
+	HR_start(&HR);
 
 	// -------------------- Radio ------------------------------
 	DDRD &= ~(1 << DDD2) ; 
@@ -116,16 +121,16 @@ void new_mode_test()
  		screen_sendBuffer(screen.buffer);
  		_delay_ms(2); 
  		radio.packet_sent = 0;
-
-
- 		if (mode == 3) // want to start the heart rate measuring 
- 		{
- 			HR_start(&HR);
- 		}
- 		else if (mode == 4 || mode == 2)
- 		{
- 			HR_stop(&HR);
- 		}
+		
+// 
+//  		if (mode == 3) // want to start the heart rate measuring 
+//  		{
+//  			HR_start(&HR);
+//  		}
+//  		else if (mode == 4 || mode == 2)
+//  		{
+//  			HR_stop(&HR);
+//  		}
 
 	}
 	else 
@@ -211,15 +216,21 @@ int main (void)	{
  			
  			new_mode_test();
  			
+ 			memset(buffer,0,sizeof(buffer));
  			memset(data,0,sizeof(data));
 
- 			sprintf(data, "heart rate: %d", HR.BPM);
+ 			sprintf(buffer, "BPM: %d", HR.BPM);
  			memset(screen.buffer,0,sizeof(screen.buffer));
- 			screen_drawString(5, 30, data, screen.buffer);
+ 			screen_drawString(5, 30, buffer, screen.buffer);
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer);  
+ 			
+
+ 	// 		memset(data,0,sizeof(data));
+//  			sprintf(data,"%d",steps);
+//  			screen_drawString(10, 50, data, screen.buffer);  
 
  			screen_sendBuffer(screen.buffer);
  			// screen_drawFillCircle(10,10,10,1,screen.buffer);
@@ -383,6 +394,7 @@ ISR(PCINT0_vect)
 ISR(INT1_vect)
 {
 	steps++ ; 
+
 }
 
 // for the adc 
