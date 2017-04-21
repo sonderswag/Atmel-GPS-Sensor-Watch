@@ -301,7 +301,7 @@ int main (void)	{
 
  			//for fake locaiton 
  			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"-118.28814,34.024212");
+ 			sprintf(buffer,"34.024212,-118.28814");
 
 
 

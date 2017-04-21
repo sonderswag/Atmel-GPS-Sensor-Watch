@@ -299,8 +299,8 @@ int main (void)	{
  			if (radio.currentMode == 1)
  			{
  				memset(buffer,0,sizeof(buffer));
- 				sprintf(buffer,"dist: ");
- 				screen_drawString(5, 30, buffer, screen.buffer);
+ 				sprintf(buffer,"dist (km): ");
+ 				screen_drawString(5, 5, buffer, screen.buffer);
  				
  			}
  		
@@ -318,15 +318,49 @@ int main (void)	{
     			{
         			token_list[i++] = token;
         			token = strtok(NULL, ",");
-    			}
-
+    			}	
     			// float dist = GPS_calculate(&gps, atof(split_string[0]), atof(split_string[1])); 
-    			// memset(buffer,0,sizeof(buffer));
-    			// FloatToStringNew(data, dist, 6);
-    			screen_drawString(50, 30, token_list[0], screen.buffer);
-
+//     			memset(buffer,0,sizeof(buffer));
+//     			FloatToStringNew(data, dist, 6);
+    			//screen_drawString(50, 5, token_list[0], screen.buffer);
+    			
+    			float dist = GPS_calculate(&gps, atof(token_list[0]), atof(token_list[1])); 
+    			memset(buffer,0,sizeof(buffer));
+    			FloatToStringNew(buffer, dist, 6);
+    			screen_drawString(60, 5, buffer, screen.buffer);
+				 			
+ 				//cheating way of finding bearing, not true bearing
+				if (gps.latitude <= atof(token_list[0]) && fabsf(gps.longitude) >= fabsf(atof(token_list[1])))	{
+ 					screen_drawFillCircle(75, 20, 5, ON, screen.buffer);
+ 				}
+ 				else if (gps.latitude <= atof(token_list[0]) && fabsf(gps.longitude) < fabsf(atof(token_list[1])))	{
+ 					screen_drawFillCircle(45, 20, 5, ON, screen.buffer);
+ 				}
+ 				else if (gps.latitude > atof(token_list[0]) && fabsf(gps.longitude) < fabsf(atof(token_list[1])))	{
+ 					screen_drawFillCircle(45, 40, 5, ON, screen.buffer);
+ 				}
+ 				else if (gps.latitude > atof(token_list[0]) && fabsf(gps.longitude) >= fabsf(atof(token_list[1])))	{
+ 					screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
+ 				}
  			}
-
+		
+		 	memset(data,0,sizeof(data));
+ 			sprintf(data,"N");
+ 			screen_drawString(60, 10, data, screen.buffer);  
+ 			screen_sendBuffer(screen.buffer);
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"W");
+ 			screen_drawString(30, 30, data, screen.buffer);  
+ 			screen_sendBuffer(screen.buffer);
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"E");
+ 			screen_drawString(90, 30, data, screen.buffer);  
+ 			screen_sendBuffer(screen.buffer);
+ 			memset(data,0,sizeof(data));
+ 			sprintf(data,"S");
+ 			screen_drawString(60, 50, data, screen.buffer);  
+ 			screen_sendBuffer(screen.buffer);
+ 					 	
  			memset(data,0,sizeof(data));
  			sprintf(data,"%d",mode);
  			screen_drawString(120, 50, data, screen.buffer);  
