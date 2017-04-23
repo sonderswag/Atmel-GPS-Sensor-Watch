@@ -22,8 +22,8 @@ volatile struct HR_data
 	uint16_t reading;
 	
 	uint16_t threshold; 
-	
 
+	
 };
 
 

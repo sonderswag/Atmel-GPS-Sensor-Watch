@@ -35,11 +35,14 @@ uint16_t steps = 0;		// step counter
 struct Screen screen; 
 struct GPS gps;
 struct RFM69 radio;
+// heart rate struct
 
 char data[15]; 
 char buffer[23];
-// heart rate struct
+
+
 volatile struct HR_data HR;
+
 
 
 
