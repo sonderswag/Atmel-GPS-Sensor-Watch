@@ -76,8 +76,8 @@ int main(int argc, const char * argv[]) {
 //Hardware interrupt
 ISR(INT0_vect)
 {
-	// serial_outputString("I ");
+	serial_outputString("I ");
 
-		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, slaveSelectPin) ;
+	radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, slaveSelectPin) ;
 
 }

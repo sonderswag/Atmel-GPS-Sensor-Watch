@@ -49,10 +49,8 @@ void LSM_init()
 
 
 	// set wait to be 
-	// LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x0A,0b10); 
+	LSM_writeReg(0x20,0x1C); // contorl reg 1 
 
-	// generate interrupts 
-	// LSM_writeReg(LSM9DS1_ADDRESS_ACCELGYRO_WRITE,0x26,0x0A); 
 
 	/* the mag data was too noisy to use properly. 
 	// no temp adjust 
