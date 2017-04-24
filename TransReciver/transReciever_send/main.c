@@ -52,7 +52,7 @@ int main(int argc, const char * argv[]) {
 
 	sei(); // start interrupts 
 
-	char message[] = "hey,you" ;
+	char message[] = "hey,you,boo" ;
 	
 
 	while (1)

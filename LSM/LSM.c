@@ -2,6 +2,8 @@
 #include <util/twi.h>
 #include <stdint.h>
 #include <avr/interrupt.h>
+#include <avr/interrupt.h>
+#include <math.h> 
 #include "LSM.h"
 #include "../I2C/I2C.h"
 #include "../Serial/Serial.h"
@@ -49,18 +51,20 @@ void LSM_init()
 
 
 	// set wait to be 
-	LSM_writeReg(0x20,0x1C); // contorl reg 1 
+	LSM_writeReg(LSM9DS1_ADDRESS_MAG_WRITE,CTRL_REG3_M,0x00);
+	// LSM_writeReg(LSM9DS1_ADDRESS_MAG_WRITE,CTRL_REG1_M,0x3D); // contorl reg 1 
 
 
-	/* the mag data was too noisy to use properly. 
+
 	// no temp adjust 
 	// x-y high performence 
 	// 10hz sampling 
 	// no self test 
-	LSM_writeReg(LSM9DS1_ADDRESS_MAG_WRITE,CTRL_REG1_M,0b00110000);
+
 	// turn on the device chage 0x03 -> 0x00 
-	LSM_writeReg(LSM9DS1_ADDRESS_MAG_WRITE,CTRL_REG3_M,0x00);
-	MAG_calibrate(); */ 
+	
+	// LSM_writeReg(LSM9DS1_ADDRESS_MAG_WRITE,CTRL_REG3_M,0x03);
+	// MAG_calibrate();  
 	sei(); 
 }
 
@@ -131,20 +135,40 @@ void MAG_calibrate()
 	// FloatToStringNew(buf, Y, 6);
 	// serial_outputString(buf); 
 
-	
+}
+
+void LSM_getHeading(float* heading)
+{
+	float x,y;
+	Mag_readXY(&x,&y);
+
+	*heading = atan2(y,x);
+	*heading += (12.0 + (3.0 / 60.0)) / (180 / 3.14159);
+
+	if (*heading < 0)
+	{
+		*heading += 6.2831; 
+	}
+	else if (*heading > 6.2831)
+	{
+		*heading -= 6.2831; 
+	}
+
+	*heading *= 180/3.14159;
 
 }
 
 
-void Mag_readXYZ(float* X, float* Y, float* Z)
+void Mag_readXY(float* X, float* Y)
 {
+	cli(); 
 	i2c_start(LSM9DS1_ADDRESS_MAG_WRITE);
 	i2c_write(0x28); //28 is for starting with x
 	i2c_start(LSM9DS1_ADDRESS_MAG_READ);
-	short int x,y,z;
+	int16_t x,y;
 
-	char lower = i2c_read_ack(); 
-	char upper = i2c_read_ack(); 
+	uint8_t lower = i2c_read_ack(); 
+	uint8_t upper = i2c_read_ack(); 
 
 	x = lower | (upper << 8);
 
@@ -153,18 +177,13 @@ void Mag_readXYZ(float* X, float* Y, float* Z)
 
 	y = lower | (upper << 8); 
 
-	// lower = i2c_read_ack(); 
-	// upper = i2c_read_nack(); 
-
-	// z = lower | (upper << 8); 
-
 	i2c_stop(); 
 
 	//convert via the scale 
 
-	*X = ((x*0.14)/1000);  
-	*Y = (y*0.14)/1000; 
-	// *Z = (z*0.14)/1000; 
+	*X = (((float)x*0.153)/1000);  
+	*Y = (((float)y*0.153)/1000); 
+	sei();
 
 }	
 
@@ -176,10 +195,10 @@ void Acc_readXYZ(float* X, float* Y, float* Z)
 	i2c_start(LSM9DS1_ADDRESS_ACCELGYRO_WRITE);
 	i2c_write(0x28); //this is starting x_lower 
 	i2c_start(LSM9DS1_ADDRESS_ACCELGYRO_READ);
-	short int x,y,z;
+	uint16_t x,y,z;
 
-	char lower = i2c_read_ack(); 
-	char upper = i2c_read_ack(); 
+	uint8_t lower = i2c_read_ack(); 
+	uint8_t upper = i2c_read_ack(); 
 
 	x = lower | (upper << 8);
 	x += 400 ; //this is the offset for the small board 

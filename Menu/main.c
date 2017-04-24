@@ -37,10 +37,8 @@ struct GPS gps;
 struct RFM69 radio;
 // heart rate struct
 
-char data[15]; 
+
 char buffer[23];
-
-
 volatile struct HR_data HR;
 
 
@@ -165,29 +163,39 @@ int main (void)	{
 			new_mode_test();
 			// current step is to draw some strings
 			GPS_readSerialInput(&gps);
+			memset(screen.buffer,0,sizeof(screen.buffer));
 			// GPS_printInfo(&gps); 
 			float temp; 
+
+			LSM_getHeading(&temp); 
+			memset(buffer,0,sizeof(buffer));
+			FloatToStringNew(buffer,temp,3);
+			screen_drawString(10, 5, buffer, screen.buffer); 
+
+
 			LSM_getTemp(&temp);
 
 
  			// print out time values
- 			memset(screen.buffer,0,sizeof(screen.buffer));
- 			memset(data,0,sizeof(data));
+ 			
+
+ 			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer, "%d:%d:%d", gps.hour, gps.minute, gps.seconds);
 
 
  			screen_drawString(50, 30, buffer, screen.buffer); 
 
  			memset(buffer,0,sizeof(buffer));
- 			memset(data,0,sizeof(data));
- 			FloatToStringNew(data,temp,2);
+
  			sprintf(buffer, "temp: "); 
- 			strcat(buffer,data);
+ 			FloatToStringNew(&(buffer[6]),temp,2);
+ 			
+
  			screen_drawString(5, 40, buffer, screen.buffer);
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(110, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(110, 50, buffer, screen.buffer);  
 
  			if (gps.satellites == 0)
  			{
@@ -205,9 +213,9 @@ int main (void)	{
  			screen_clear(screen.buffer);
  			screen_drawString(5, 30, buffer, screen.buffer);
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer);  
 
  			screen_sendBuffer(screen.buffer);
  		}
@@ -220,7 +228,7 @@ int main (void)	{
  			new_mode_test();
  			
  			memset(buffer,0,sizeof(buffer));
- 			memset(data,0,sizeof(data));
+
 
  			sprintf(buffer, "BPM: %d", HR.BPM);
  			memset(screen.buffer,0,sizeof(screen.buffer));
@@ -248,31 +256,29 @@ int main (void)	{
  			
  			// current step is to draw some strings
 			GPS_readSerialInput(&gps);
-			memset(data,0,sizeof(data));
- 		    FloatToStringNew(data,gps.longitude , 6); 
-		    sprintf(buffer,"Long: ");
-		    strcat(buffer,data); 
+
+			memset(buffer,0,sizeof(buffer));
+			sprintf(buffer,"long: ");
+ 		    FloatToStringNew(&(buffer[6]),gps.longitude , 6); 
 		    screen_drawString(5, 5, buffer, screen.buffer);
 			
-			memset(data,0,sizeof(data));
-		    FloatToStringNew(data,gps.latitude , 6); 
-		    sprintf(buffer,"lat: ");
-		    strcat(buffer,data); 
+			memset(buffer,0,sizeof(buffer));
+			sprintf(buffer,"lat: ");
+		    FloatToStringNew(&(buffer[5]),gps.latitude , 6); 
 		    screen_drawString(5, 20, buffer, screen.buffer);
 			
-			memset(data,0,sizeof(data));
-		    FloatToStringNew(data,gps.altitude , 1); 
-		    sprintf(buffer,"altitude: ");
-		    strcat(buffer,data); 
+			memset(buffer,0,sizeof(buffer));
+			sprintf(buffer,"altitude: ");
+		    FloatToStringNew(&(buffer[10]),gps.altitude , 1); 
 		    screen_drawString(5, 35, buffer, screen.buffer);
 
-		    memset(data,0,sizeof(data));
+		    memset(buffer,0,sizeof(buffer));
  			sprintf(buffer, "satellites %d",gps.satellites); 
  			screen_drawString(5, 50, buffer, screen.buffer);
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer);  
 
  			if (gps.satellites == 0)
  			{
@@ -347,26 +353,26 @@ int main (void)	{
  				}
  			}
 		
-		 	memset(data,0,sizeof(data));
- 			sprintf(data,"N");
- 			screen_drawString(60, 10, data, screen.buffer);  
+		 	memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"N");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
  			screen_sendBuffer(screen.buffer);
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"W");
- 			screen_drawString(30, 30, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"W");
+ 			screen_drawString(30, 30, buffer, screen.buffer);  
  			screen_sendBuffer(screen.buffer);
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"E");
- 			screen_drawString(90, 30, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"E");
+ 			screen_drawString(90, 30, buffer, screen.buffer);  
  			screen_sendBuffer(screen.buffer);
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"S");
- 			screen_drawString(60, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"S");
+ 			screen_drawString(60, 50, buffer, screen.buffer);  
  			screen_sendBuffer(screen.buffer);
  					 	
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer);  
  			screen_sendBuffer(screen.buffer);
 
  		}

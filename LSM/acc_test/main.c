@@ -10,7 +10,7 @@
 #include <util/delay.h>
 #include <avr/io.h> 
 #include <avr/interrupt.h>
-
+#include <math.h> 
 
 #include "../LSM.h"
 #include "../../Digital_IO/DigitalIo.h"
@@ -37,14 +37,15 @@ int main(int argc, const char * argv[]) {
 	
 	while (1)
 	{
-		Acc_readXYZ(&x,&y,&z);
+		// Acc_readXYZ(&x,&y,&z);
+		LSM_getHeading(&temp);
 
-		// FloatToStringNew(buf, x_avg, 6);
-		// serial_out('X');
+		FloatToStringNew(buf, temp, 6);
+		// serial_out('');
 		// serial_out(' '); 
-		// serial_outputString(buf); 
+		serial_outputString(buf); 
 
-		// FloatToStringNew(buf, y_avg, 6);
+		// FloatToStringNew(buf, y, 6);
 		// serial_out('Y');
 		// serial_out(' '); 
 		// serial_outputString(buf); 

@@ -42,7 +42,8 @@ void LSM_init();
 
 void LSM_writeReg(char devAdd, char reg, char data);
 void Acc_readXYZ(float* X, float* Y, float* Z);
-void Mag_readXYZ(float* X, float* Y, float* Z);
+void Mag_readXY(float* X, float* Y);
 void LSM_getTemp(float* temp); 
+void LSM_getHeading(float* heading);
 
 #endif 

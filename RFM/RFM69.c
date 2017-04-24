@@ -39,6 +39,7 @@ void RFM_init(char cs)
 	// defaults to fixed packet format 
     // Here we set up the standard packet format for use by the RH_RF69 library:
     // 4 bytes preamble
+    // 2 SYNC words 2d, d4
     // 2 CRC CCITT octets computed on the header, length and data (this in the modem config data)
     // 0 to 60 bytes data
     // RSSI Threshold -114dBm
@@ -47,7 +48,7 @@ void RFM_init(char cs)
 
 	// RH_RF69_REG_3C_FIFOTHRESH : 0x3c == Tx start 
 	// RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY : 0x80  setting threshold for fif0 to 0x8f as recommended 
-    RFM_writeReg(RH_RF69_REG_3C_FIFOTHRESH, RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY | 0x0F, cs); // thresh 10 is default
+    RFM_writeReg(RH_RF69_REG_3C_FIFOTHRESH, RH_RF69_FIFOTHRESH_TXSTARTCONDITION_NOTEMPTY | 0x0f, cs); // thresh 15 is default
 
     RFM_writeReg(RH_RF69_REG_6F_TESTDAGC, RH_RF69_TESTDAGC_CONTINUOUSDAGC_IMPROVED_LOWBETAOFF, cs);
 
@@ -176,7 +177,6 @@ void RFM_unselect(char slaveSelectPin)
 	so would want to call 
 	RFM_select(cs);
 	RFM_wrtieREG 
-
 */ 
 
 // write a single byte to a given register 
@@ -214,6 +214,40 @@ char RFM_readReg(char address, char cs)
 	return new ; 
 }
 
+
+
+/* Write multiple bytes to radio 
+address :: address to write multiple bytes (0x00 is fifo )
+src :: data to be written 
+len :: number of bytes to be writen 
+radio :: holding the slave select pi 
+*/ 
+void RFM_burstWrtie(char address, char* src, char len, char cs)
+{
+	cli(); 
+	digitalWrite(cs, 0);
+	SPI_transfer(address |= RH_SPI_WRITE_MASK); // putting 1 in MSB )
+	SPI_multiTransfer(src,len);
+	digitalWrite(cs, 1);
+	sei(); 
+}
+
+
+void RFM_burstRead(char address, char* dest, char len, char cs)
+{
+	cli(); 
+	digitalWrite(cs, 0);
+	SPI_transfer(address |= RH_SPI_WRITE_MASK); // putting 1 in MSB )
+
+	while(len--) 
+	{
+		*dest++ = SPI_transfer(0x00); // reading the FIFO 
+	}
+
+	digitalWrite(cs, 1);
+	sei(); 
+}
+
 void RFM_setSyncWords(char* syncwords, char cs)
 {
 	// restricting number of sync words to 2 for now 
@@ -227,6 +261,7 @@ void RFM_setSyncWords(char* syncwords, char cs)
 	// setting the sync words 
 	RFM_writeReg(0x2f,syncwords[0],cs);
 	RFM_writeReg(0x30,syncwords[1],cs);
+
 	
 }
 
@@ -262,13 +297,13 @@ void RFM_modeSetter(char mode, char cs)
     RFM_writeReg(RH_RF69_REG_01_OPMODE, opmode, cs);
 
     // Wait for mode to change. this could cause problems 
-    while (!(RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & RH_RF69_IRQFLAGS1_MODEREADY));
+    // while (!(RFM_readReg(RH_RF69_REG_27_IRQFLAGS1,cs) & RH_RF69_IRQFLAGS1_MODEREADY));
 	
 }
 
 void RFM_setMode(char* currentMode, char mode, char cs)
 {
-	if (*currentMode == mode ) // checking to see if it is already in the mode 
+	if (*currentMode == mode ) // checking to see if it is already in rx mode 
 	{
 		return ; 
 	}
@@ -283,7 +318,7 @@ void RFM_setMode(char* currentMode, char mode, char cs)
 
 	else if (mode == 1) //recieve 
 	{
-		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x55, cs); 
+		RFM_writeReg(RH_RF69_REG_5A_TESTPA1, 0x55, cs); // used to boost power to transmitter / reciever 
 		RFM_writeReg(RH_RF69_REG_5C_TESTPA2, 0x70, cs); 
 		RFM_modeSetter(RH_RF69_OPMODE_MODE_RX,cs); 
 		RFM_writeReg(RH_RF69_REG_25_DIOMAPPING1, 0x40,cs); // set DIO0 to "PAYLOADREADY" in receive mode
@@ -332,17 +367,15 @@ void RFM_setHighPower(char onOff, char cs)
 	}
 }
 
-// // get the received signal strength indicator (RSSI)
-// int RFM_readRSSI(char cs) 
-// {
-//   int rssi = 0;
+// get the received signal strength indicator (RSSI)
+int RFM_readRSSI(char cs) 
+{
+  int rssi = 0;
  
-//   RFM_writeReg(RH_RF69_REG_23_RSSICONFIG, 0x01,cs); //start the measurements 
-//   while ((RFM_readReg(RH_RF69_REG_23_RSSICONFIG,cs) & 0x02) == 0x00); // wait for RSSI_Ready
+  RFM_writeReg(RH_RF69_REG_23_RSSICONFIG, 0x01,cs); //start the measurements 
+  while ((RFM_readReg(RH_RF69_REG_23_RSSICONFIG,cs) & 0x02) == 0x00); // wait for RSSI_Ready
   
-//   rssi = -RFM_readReg(RH_RF69_REG_24_RSSIVALUE,cs);
-//   rssi >>= 1;
-//   return rssi;
-// }
-
-
+  rssi = -RFM_readReg(RH_RF69_REG_24_RSSIVALUE,cs);
+  rssi >>= 1;
+  return rssi;
+}
