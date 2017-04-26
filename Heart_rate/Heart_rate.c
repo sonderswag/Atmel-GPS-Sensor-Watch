@@ -1,4 +1,5 @@
 #include "Heart_rate.h"
+
 #include <stdio.h>
 #include <util/delay.h>
 #include <avr/io.h> 
@@ -26,6 +27,9 @@ void HR_init()
 
 	TCCR1B |= (1 << CS12) | (1 << CS10); //this starts the timer; and sets the prescale to 1024
 	sei(); // enable global interrupts 
+
+	DDRB |= (1 << 1); // 15 
+
 
 }
 
@@ -58,11 +62,12 @@ void HR_read(volatile struct HR_data* HR)
 	// serial_outputString(buf);
 
 	// measuring count and handling the state machine 
-	if ((HR->reading > HR->threshold+90) && (HR->state == 0) && HR->count > 3200) //600 is the current threshold 
+	if ((HR->reading > HR->threshold) && (HR->state == 0) && HR->count > 3200) //600 is the current threshold 
 	{
-		
+		PORTB |= (1 << 1);
 		HR->state = 1; 
 		HR->heart_count++; 
+
 
 	// char buf[5];
 	// sprintf(buf,"%d",HR->count);
@@ -72,7 +77,7 @@ void HR_read(volatile struct HR_data* HR)
 	else if ((HR->state == 1) && (HR->reading < HR->threshold) && HR->count > 1500)
 	{
 		HR->state = 0; 
-		
+		PORTB &= ~(1 << 1);
 	}
 	else 
 	{
@@ -83,11 +88,11 @@ void HR_read(volatile struct HR_data* HR)
 	
 	if (HR->reading > HR->max)
 	{
-		HR->max = HR->reading; 
+		HR->max = (HR->max + HR->reading)/2; 
 	}
 	else if (HR->reading < HR->min)
 	{
-		HR->min = HR->reading;
+		HR->min = (HR->min + HR->reading)/2;
 	}
 
 
@@ -136,7 +141,7 @@ void HR_calc_BPM(volatile struct HR_data* HR)
 		}
 		else 
 		{
-			HR->threshold = (HR->max+HR->min) / 2 ;
+			HR->threshold = ((HR->max+HR->min) / 2)+120 ;
 		}
 		// HR->upper_threshold = HR->max - 100 ;
 		// HR->lower_threshold = HR->min + 200; 

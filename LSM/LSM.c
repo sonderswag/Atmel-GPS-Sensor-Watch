@@ -143,18 +143,18 @@ void LSM_getHeading(float* heading)
 	Mag_readXY(&x,&y);
 
 	*heading = atan2(y,x);
-	*heading += (12.0 + (3.0 / 60.0)) / (180 / 3.14159);
+	*heading *= 180/3.14159;
+	*heading += (12.0 + (3.0 / 60.0)) ;
 
 	if (*heading < 0)
 	{
-		*heading += 6.2831; 
+		*heading += 360; 
 	}
-	else if (*heading > 6.2831)
+	else if (*heading > 360)
 	{
-		*heading -= 6.2831; 
+		*heading -= 360; 
 	}
 
-	*heading *= 180/3.14159;
 
 }
 

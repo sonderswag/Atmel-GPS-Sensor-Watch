@@ -77,7 +77,7 @@ uint8_t i2c_read_ack()
 	return TWDR;
 }
 
-uint8_t i2c_read_nack()
+uint8_t i2c_read_nack(void)
 {
 	// start receiving without acknowledging reception
 	TWCR = (1<<TWINT) | (1<<TWEN);

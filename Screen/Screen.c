@@ -186,13 +186,34 @@ void screen_clear(char* buffer)
 void screen_drawChar(unsigned char pos_x, unsigned char pos_y, 
     unsigned char letter, char *buff)
 {
-    char page = (pos_y); 
 
-    uint8_t ascii_offset = 32;
+
+    uint8_t ascii_offset;
+    if (letter >= '0' && letter <= ':')
+    {
+        ascii_offset = 46;
+    }
+    else if (letter == '.')
+    {
+        ascii_offset = 46; 
+    }
+    else if (letter >= 'a' && letter <= 'z')
+    {
+        ascii_offset = 84; 
+    }
+    else if (letter == ' ')
+    {
+        ascii_offset = 31;  
+    }
+    else 
+    {
+        return; 
+    }
+
     char i ;
     for(i = 0; i < 5; i++)
     {
-        buff[i+((page*128)+pos_x)] = Ascii_1[letter-ascii_offset][i];
+        buff[i+((pos_y*128)+pos_x)] = Ascii_1[letter-ascii_offset][i];
     }
 }
 

@@ -27,13 +27,14 @@
 uint8_t mode = 1;		//float so can print out for testing
 uint8_t new_mode = 1; 	// this is a flag for entering into a new mode 
 uint16_t steps = 0;		// step counter
+float float_value = 0.0;
 
 // radio, screen and GPS structs
 struct Screen screen; 
 struct GPS gps;
 struct RFM69 radio;
 
-char data[15]; 
+
 char buffer[23];
 
 // heart rate struct
@@ -105,6 +106,7 @@ void init()
 	RFM_spiConfig(slaveSelectPin);
 	spi_init_master();			// SPI
 	RFM_init(slaveSelectPin);
+	RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
 
 
 
@@ -115,7 +117,7 @@ void new_mode_test()
 {
 	if (new_mode)
 	{
-
+		
  		// sprintf(buffer,"mode: %d",mode);
 		// serial_outputString(buffer);	
 		new_mode = 0; 
@@ -123,6 +125,10 @@ void new_mode_test()
  		screen_sendBuffer(screen.buffer);
  		_delay_ms(2); 
  		radio.packet_sent = 0;
+ 		if (mode != 5)
+ 		{
+ 			RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
+ 		}
 	}
 	else 
 	{
@@ -162,9 +168,9 @@ int main (void)	{
  			sprintf(buffer, "%d:%d:%d", gps.hour, gps.minute, gps.seconds);
  			screen_drawString(50, 30, buffer, screen.buffer);  
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer);  
 
  			if (gps.satellites == 0)
  			{
@@ -183,9 +189,9 @@ int main (void)	{
  			memset(screen.buffer,0,sizeof(screen.buffer));
  			screen_drawString(5, 30, buffer, screen.buffer);
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer);  
 
  			if (gps.satellites == 0)
  			{
@@ -203,20 +209,22 @@ int main (void)	{
  		{
  			
  			new_mode_test();
- 			float temp; 
-			LSM_getTemp(&temp);
+ 	
+ 			LSM_getHeading(&float_value);
+ 			FloatToStringNew(buffer,float_value,3);
+			screen_drawString(10, 5, buffer, screen.buffer); 
+
+			LSM_getTemp(&float_value);
 			memset(buffer,0,sizeof(buffer));
- 			memset(data,0,sizeof(data));
- 			FloatToStringNew(data,temp,2);
  			sprintf(buffer, "temp: "); 
- 			strcat(buffer,data);
+ 			FloatToStringNew(&(buffer[6]),float_value,2);
  			screen_drawString(5, 40, buffer, screen.buffer);
  			
 
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(120, 50, data, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer); 
 
 
  			if (gps.satellites == 0)
@@ -244,31 +252,28 @@ int main (void)	{
  			
  			// current step is to draw some strings
 			GPS_readSerialInput(&gps);
-			memset(data,0,sizeof(data));
- 		    FloatToStringNew(data,gps.longitude , 6); 
-		    sprintf(buffer,"longitude: ");
-		    strcat(buffer,data); 
+			memset(buffer,0,sizeof(buffer));
+			sprintf(buffer,"long: ");
+ 		    FloatToStringNew(&(buffer[6]),gps.longitude , 6); 
 		    screen_drawString(5, 5, buffer, screen.buffer);
 			
-			memset(data,0,sizeof(data));
-		    FloatToStringNew(data,gps.latitude , 6); 
-		    sprintf(buffer,"latitude: ");
-		    strcat(buffer,data); 
+			memset(buffer,0,sizeof(buffer));
+			sprintf(buffer,"lat: ");
+		    FloatToStringNew(&(buffer[5]),gps.latitude , 6); 
 		    screen_drawString(5, 20, buffer, screen.buffer);
 			
-			memset(data,0,sizeof(data));
-		    FloatToStringNew(data,gps.altitude , 1); 
-		    sprintf(buffer,"altitude: ");
-		    strcat(buffer,data); 
+			memset(buffer,0,sizeof(buffer));
+			sprintf(buffer,"altitude: ");
+		    FloatToStringNew(&(buffer[10]),gps.altitude , 1); 
 		    screen_drawString(5, 35, buffer, screen.buffer);
 
-		    memset(data,0,sizeof(data));
+		    memset(buffer,0,sizeof(buffer));
  			sprintf(buffer, "satellites %d",gps.satellites); 
  			screen_drawString(5, 50, buffer, screen.buffer);
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(110, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 50, buffer, screen.buffer);  
 
 
  			if (gps.satellites == 0)
@@ -289,23 +294,97 @@ int main (void)	{
  			GPS_readSerialInput(&gps); 	
 
  			//to get acutal gps location
-
- 			// memset(buffer,0,sizeof(buffer)); 
- 			// memset(data,0,sizeof(data)); 	
- 			// FloatToStringNew(data,gps.latitude,6);
- 			// strcat(buffer,data);
- 			// strcat(buffer,",");
- 			// memset(data,0,sizeof(data)); 
- 			// FloatToStringNew(data,gps.longitude,6);
- 			// strcat(buffer,data);
+ 			char data[15];
+ 			memset(buffer,0,sizeof(buffer)); 
+ 			memset(data,0,sizeof(data)); 	
+ 			FloatToStringNew(data,gps.latitude,6);
+ 			strcat(buffer,data);
+ 			strcat(buffer,",");
+ 			memset(data,0,sizeof(data)); 
+ 			FloatToStringNew(data,gps.longitude,6);
+ 			strcat(buffer,data);
 
  			//for fake locaiton 
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"34.024212,-118.28814");
+ 			// memset(buffer,0,sizeof(buffer));
+ 			// sprintf(buffer,"34.024212,-118.28814");
 
 
 
  			RFM_send(buffer,&radio.currentMode, sizeof(buffer), slaveSelectPin);
+
+
+ 			LSM_getHeading(&float_value);
+
+			// char direction[5]; 
+
+			memset(buffer,0,sizeof(buffer));
+			if ( float_value > 290 || float_value < 10 ) //north 
+			{
+
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"w");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"s");
+ 			screen_drawString(60, 50, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(90, 30, buffer, screen.buffer);  
+ 			 
+
+
+			}
+			else if (float_value <= 290 && float_value > 170 ) // west
+			{
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"w");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"s");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(60, 50, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
+ 			screen_drawString(90, 30, buffer, screen.buffer);
+
+			}
+			else if (float_value <= 170 && float_value > 80 ) //south 
+			{
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"s");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
+ 			screen_drawString(60, 50, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"w");
+ 			screen_drawString(90, 30, buffer, screen.buffer);
+ 
+			}
+			else if (float_value <= 80 && float_value >= 10)
+			{
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"w");
+ 			screen_drawString(60, 50, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"s");
+ 			screen_drawString(90, 30, buffer, screen.buffer); 
+
+			}
 
  			// if (radio.currentMode = 1)
  			// {
@@ -338,9 +417,9 @@ int main (void)	{
 
  			// }
 
- 			memset(data,0,sizeof(data));
- 			sprintf(data,"%d",mode);
- 			screen_drawString(110, 50, data, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",buffer);
+ 			screen_drawString(110, 50, buffer, screen.buffer);  
 
 
  			if (gps.satellites == 0)
@@ -351,6 +430,19 @@ int main (void)	{
  			screen_sendBuffer(screen.buffer);
 
 
+ 		}
+ 		else if (mode == 6)
+ 		{
+ 			memset(buffer,0,sizeof(buffer));
+ 			// sprintf(buffer,"%d",buffer);
+ 			screen_drawString(50, 30, "got it", screen.buffer);
+ 			screen_sendBuffer(screen.buffer);
+ 			if (radio.receiveDataFlag)
+ 			{
+ 				mode = 5; 
+ 				new_mode = 1; 
+ 			}
+ 			// RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
  		}
 	}
 	
@@ -363,14 +455,14 @@ ISR(PCINT2_vect)
 {
 	new_mode = 1; 
 	if ((PIND & redbut)==0)	{
-		mode++;
+		// mode++;
 
-		// char bufferbut[10];
-		// sprintf(bufferbut,"redbut %d",mode);
-		// serial_outputString(bufferbut);	
-		_delay_ms(2);
-		while ((PIND & redbut)==0)	{}
-		_delay_ms(2);
+		// // char bufferbut[10];
+		// // sprintf(bufferbut,"redbut %d",mode);
+		// // serial_outputString(bufferbut);	
+		// _delay_ms(2);
+		// while ((PIND & redbut)==0)	{}
+		// _delay_ms(2);
 	}
 	
 	else if ((PIND & greenbut)==0)	
@@ -448,8 +540,12 @@ ISR(TIMER1_COMPA_vect)
 }
 
 ISR(INT0_vect) {
-	serial_outputString("I ");
+	// serial_outputString("I ");
 	// sets to idle, which is needed to know which packet was sent
+	// memset(buffer,0,sizeof(buffer));
+ // 	screen_drawString(50, 30, "interrupt", screen.buffer);
+ // 	screen_sendBuffer(screen.buffer);
+
 	if (radio.currentMode == 2) // if in transmit 
 	{
 		radio.packet_sent = RFM_interruptHandler(&radio.currentMode, slaveSelectPin);
@@ -457,6 +553,11 @@ ISR(INT0_vect) {
 	else if (radio.currentMode == 1) // reciever 
 	{
 		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, slaveSelectPin) ;
+		if (mode != 6)
+		{
+			mode = 6; 
+			new_mode = 1; 
+		}
 	}
 }
 

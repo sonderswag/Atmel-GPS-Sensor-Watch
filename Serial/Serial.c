@@ -57,7 +57,7 @@ void FloatToStringNew(char *str, float f, char size)
         value *= -1;
     }
 
-     len = strlen(str);  // find out how big the integer part was
+    len = strlen(str);  // find out how big the integer part was
     pos = len;  // position the pointer to the end of the integer part
     str[pos++] = '.';  // add decimal point to string
 

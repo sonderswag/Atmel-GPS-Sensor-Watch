@@ -28,8 +28,11 @@
 
 
 uint8_t mode = 1;		//float so can print out for testing
+uint8_t connecting = 0; 
+uint8_t switch_case = 0;
 uint8_t new_mode = 1; 	// this is a flag for entering into a new mode 
 uint16_t steps = 0;		// step counter
+float float_value = 0.0 ; 
 
 // radio, screen and GPS structs
 struct Screen screen; 
@@ -91,7 +94,7 @@ void init()
 
 	// -------------------- Heart_rate --------------------------
 	HR_init(); 
-	HR_start(&HR);
+	// HR_start(&HR);
 
 	// -------------------- Radio ------------------------------
 	DDRD &= ~(1 << DDD2) ; 
@@ -110,6 +113,17 @@ void init()
 	RFM_init(slaveSelectPin);
 	RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
 
+	// -------------------- Timer ------------------------------
+	// // Set the Timer Mode to CTC
+ //    TCCR0A |= (1 << WGM01);
+ //    // 1*7372800 / 1024 = 7200 
+ //    OCR0A = 7200;
+ //    TIMSK0 |= (1 << OCIE0A); // tunring on interrupts 
+ //    // TCCR0B |= (1 << CS02) | (1 << CS00); this starts the timer and restarts it if neceassry. for 1024
+ //    // TCCR0B |= (1 << CS02); for 254
+
+
+
 }
 
 
@@ -122,6 +136,20 @@ void new_mode_test()
  		screen_sendBuffer(screen.buffer);
  		_delay_ms(2); 
  		radio.packet_sent = 0;
+ 		switch_case = 0; 
+
+ 		if (mode == 3)
+ 		{
+ 			HR_start(&HR);	
+ 		}
+ 		if (mode != 3)
+ 		{
+ 			HR_stop(&HR);
+ 		}
+ 		if (mode == 6)
+ 		{
+ 			connecting = 1; 
+ 		}
 		
 // 
 //  		if (mode == 3) // want to start the heart rate measuring 
@@ -165,15 +193,14 @@ int main (void)	{
 			GPS_readSerialInput(&gps);
 			memset(screen.buffer,0,sizeof(screen.buffer));
 			// GPS_printInfo(&gps); 
-			float temp; 
-
-			LSM_getHeading(&temp); 
+	
+			LSM_getHeading(&float_value); 
 			memset(buffer,0,sizeof(buffer));
-			FloatToStringNew(buffer,temp,3);
+			FloatToStringNew(buffer,float_value,3);
 			screen_drawString(10, 5, buffer, screen.buffer); 
 
 
-			LSM_getTemp(&temp);
+			LSM_getTemp(&float_value);
 
 
  			// print out time values
@@ -188,7 +215,7 @@ int main (void)	{
  			memset(buffer,0,sizeof(buffer));
 
  			sprintf(buffer, "temp: "); 
- 			FloatToStringNew(&(buffer[6]),temp,2);
+ 			FloatToStringNew(&(buffer[6]),float_value,2);
  			
 
  			screen_drawString(5, 40, buffer, screen.buffer);
@@ -230,9 +257,13 @@ int main (void)	{
  			memset(buffer,0,sizeof(buffer));
 
 
- 			sprintf(buffer, "BPM: %d", HR.BPM);
+ 			sprintf(buffer, "bpm: %d", HR.BPM);
  			memset(screen.buffer,0,sizeof(screen.buffer));
  			screen_drawString(5, 30, buffer, screen.buffer);
+
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"threshold %d",HR.threshold);
+ 			screen_drawString(5, 10, buffer, screen.buffer);  
 
  			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer,"%d",mode);
@@ -294,8 +325,8 @@ int main (void)	{
             // char longitude_remote[10];
  			new_mode_test(); 
  			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"red button to track");
- 			screen_drawString(5, 30, buffer, screen.buffer);
+ 			// sprintf(buffer,"red button to track");
+ 			screen_drawString(5, 30, "red button to track", screen.buffer);
  			
  			screen_sendBuffer(screen.buffer);
  		}
@@ -303,13 +334,59 @@ int main (void)	{
  		else if (mode == 6)
  		{
  			new_mode_test(); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"connecting");
+ 			memset(screen.buffer,0,sizeof(screen.buffer));
+
+ 			if (switch_case == 0)
+ 			{
+ 				strcat(buffer,".");
+ 				switch_case++;
+ 			}
+ 			else if (switch_case == 1)
+ 			{
+ 				strcat(buffer,"..");
+ 				switch_case++;
+ 			}
+ 			else if (switch_case == 2)
+ 			{
+ 				strcat(buffer,"...");
+ 				switch_case = 0;
+ 			}
+
+ 			screen_drawString(5, 30, buffer, screen.buffer);
+ 			screen_sendBuffer(screen.buffer);
+
+
+
+ 			if (connecting == 1) //sending for 5s 
+ 			{
+ 				memset(buffer,0,sizeof(buffer));
+ 				sprintf(buffer,"Start");
+ 				RFM_send(buffer,&radio.currentMode, sizeof(buffer), slaveSelectPin);
+ 				RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
+ 			}
+ 			else if (connecting == -1) // receiving for 5 seconds 
+ 			{
+
+ 				RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
+ 			}
+
+ 			
+ 	
+
+ 		}
+
+ 		else if (mode == 7)
+ 		{
+ 			new_mode_test(); 
  			GPS_readSerialInput(&gps); 	
 
  			if (radio.currentMode == 1)
  			{
  				memset(buffer,0,sizeof(buffer));
- 				sprintf(buffer,"dist (km): ");
- 				screen_drawString(5, 5, buffer, screen.buffer);
+ 				// sprintf(buffer,"dist (km): ");
+ 				screen_drawString(5, 5, "dist km: ", screen.buffer);
  				
  			}
  		
@@ -328,14 +405,12 @@ int main (void)	{
         			token_list[i++] = token;
         			token = strtok(NULL, ",");
     			}	
-    			// float dist = GPS_calculate(&gps, atof(split_string[0]), atof(split_string[1])); 
-//     			memset(buffer,0,sizeof(buffer));
-//     			FloatToStringNew(data, dist, 6);
-    			//screen_drawString(50, 5, token_list[0], screen.buffer);
+
+
     			
-    			float dist = GPS_calculate(&gps, atof(token_list[0]), atof(token_list[1])); 
+    			float_value = GPS_calculate(&gps, atof(token_list[0]), atof(token_list[1])); 
     			memset(buffer,0,sizeof(buffer));
-    			FloatToStringNew(buffer, dist, 6);
+    			FloatToStringNew(buffer, float_value, 6);
     			screen_drawString(60, 5, buffer, screen.buffer);
 				 			
  				//cheating way of finding bearing, not true bearing
@@ -352,27 +427,92 @@ int main (void)	{
  					screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
  				}
  			}
-		
-		 	memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"N");
+			
+			LSM_getHeading(&float_value);
+
+			memset(buffer,0,sizeof(buffer));
+			if ( float_value > 290 || float_value < 10 ) //facing north 
+			{
+
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
  			screen_drawString(60, 10, buffer, screen.buffer);  
- 			screen_sendBuffer(screen.buffer);
  			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"W");
- 			screen_drawString(30, 30, buffer, screen.buffer);  
- 			screen_sendBuffer(screen.buffer);
+ 			sprintf(buffer,"w");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
  			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"E");
- 			screen_drawString(90, 30, buffer, screen.buffer);  
- 			screen_sendBuffer(screen.buffer);
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"S");
+ 			sprintf(buffer,"s");
  			screen_drawString(60, 50, buffer, screen.buffer);  
- 			screen_sendBuffer(screen.buffer);
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(90, 30, buffer, screen.buffer);  
+
+
+			}
+			else if (float_value <= 290 && float_value > 170 ) // facing west
+			{
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"w");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"s");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(60, 50, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
+ 			screen_drawString(90, 30, buffer, screen.buffer);
+
+			}
+			else if (float_value <= 170 && float_value > 80 ) //facing south 
+			{
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"s");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
+ 			screen_drawString(60, 50, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"w");
+ 			screen_drawString(90, 30, buffer, screen.buffer);
+ 
+			}
+			else if (float_value <= 80 && float_value >= 10) // facing east 
+			{
+			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"e");
+ 			screen_drawString(60, 10, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"n");
+ 			screen_drawString(30, 30, buffer, screen.buffer); 
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"w");
+ 			screen_drawString(60, 60, buffer, screen.buffer);  
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"s");
+ 			screen_drawString(90, 30, buffer, screen.buffer); 
+
+			}
+
+
+
+		 	// memset(buffer,0,sizeof(buffer));
+
+
+ 			// LSM_getHeading(&float_value); 
+			memset(buffer,0,sizeof(buffer));
+			FloatToStringNew(buffer,float_value,3);
+			screen_drawString(5, 60, buffer, screen.buffer); 
+
+ 			
  					 	
  			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer,"%d",mode);
- 			screen_drawString(120, 50, buffer, screen.buffer);  
+ 			screen_drawString(120, 60, buffer, screen.buffer);  
  			screen_sendBuffer(screen.buffer);
 
  		}
@@ -381,6 +521,11 @@ int main (void)	{
 
 	return 0;
 }
+
+
+
+
+
 
 // button interrupt commands --------------------------------------------
 ISR(PCINT2_vect)	
@@ -402,9 +547,13 @@ ISR(PCINT2_vect)
 	
 	else if ((PIND & greenbut)==0)	
 	{
-		mode = mode-1;
+		mode--;
 		if (mode <= 0)	{
 			mode = 5;
+		}
+		else if (mode == 6)
+		{
+			mode = 1; 
 		}
 		// char bufferbut[10];
 		// sprintf(bufferbut,"green %d",mode);
@@ -419,8 +568,8 @@ ISR(PCINT0_vect)
 {
 	new_mode = 1; 
 	if ((PINB & bluebut)==0)	{
-		mode = mode+1;
-		if (mode >= 6)	{
+		mode++;
+		if (mode >= 8)	{
 			mode = 1;
 		}
 		// char bufferbut[10];
@@ -473,6 +622,15 @@ ISR(TIMER1_COMPA_vect) //happens every 5 s
 		HR_calc_BPM(&HR);
 	}
 
+	if (connecting == 1)
+	{
+		connecting = -1; 
+	}
+	else if (connecting == -1)
+	{
+		connecting = 1;
+	}
+
 }
 
 ISR(INT0_vect) {
@@ -485,9 +643,9 @@ ISR(INT0_vect) {
 	else if ((radio.currentMode == 1)) // reciever 
 	{
 		radio.receiveDataFlag = RFM_interruptHandler(&radio.currentMode, slaveSelectPin) ;
-		if (mode != 6)
+		if (mode != 7)
 		{
-			mode = 6;
+			mode = 7;
 			new_mode = 1;
 		}
 		
