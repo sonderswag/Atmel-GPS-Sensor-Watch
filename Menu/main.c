@@ -23,33 +23,43 @@
 #define OFF 0 
 
 #define slaveSelectPin 24
+
+void draw_compass();
 //global variables
 
 
 
-uint8_t mode = 1;		//float so can print out for testing
-uint8_t connecting = 0; 
-uint8_t switch_case = 0;
-uint8_t new_mode = 1; 	// this is a flag for entering into a new mode 
-uint16_t steps = 0;		// step counter
-float float_value = 0.0 ; 
+uint8_t mode        = 1;		// float so can print out for testing
+uint8_t NSEW        = 0;		// for the relative orientation 
+uint8_t connecting  = 0; 		// for the connecting screen 
+uint8_t switch_case = 0; 		// this is for the connecting screen 
+uint8_t vibrate     = 10; 		// this is to control the vibrate 
+char vibrate_notify = 22; 
+uint8_t new_mode    = 1; 		// this is a flag for entering into a new mode 
+uint8_t update_GPS_count  = 0; 
 
-// radio, screen and GPS structs
+float last_lat        = 0;		//this is for caluclating cumulative distence 
+float last_long       = 0; 
+float distence_travled = 0; 
+
+
+
+float float_value = 0.0 ; 
+float distence_value = 0.0; 
+
+int steps = 0;		// step counter
+
+// radio, screen, GPS, heart rate structs
 struct Screen screen; 
 struct GPS gps;
 struct RFM69 radio;
-// heart rate struct
-
-
-char buffer[23];
 volatile struct HR_data HR;
 
+char buffer[28];
 
 
-
-void init()
+void init_all()
 {
-
 
 	// -------------------- Serial --------------------------
 	serial_init(47);
@@ -114,18 +124,34 @@ void init()
 	RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
 
 	// -------------------- Timer ------------------------------
-	// // Set the Timer Mode to CTC
- //    TCCR0A |= (1 << WGM01);
- //    // 1*7372800 / 1024 = 7200 
- //    OCR0A = 7200;
- //    TIMSK0 |= (1 << OCIE0A); // tunring on interrupts 
- //    // TCCR0B |= (1 << CS02) | (1 << CS00); this starts the timer and restarts it if neceassry. for 1024
+	// Set the Timer Mode to CTC
+    TCCR0A |= (1 << WGM01);
+ //    // .06*7372800 / 1024 = 219.88 so 60ms
+    OCR0A = 220;
+    TIMSK0 |= (1 << OCIE0A); // tunring on interrupts 
+    TCCR0B |= (1 << CS02) | (1 << CS00); //this starts the timer and restarts it if neceassry. for 1024
  //    // TCCR0B |= (1 << CS02); for 254
+    DDRD |= (1 << 4);
+    PORTD |= (1 << 4);
+    vibrate_notify = 1; // for testing
 
 
 
 }
 
+
+void update_GPS()
+{
+	if (update_GPS_count == 12)
+	{
+			GPS_readSerialInput(&gps);
+			update_GPS_count = 0;
+	}
+	else 
+	{
+		update_GPS_count++; 
+	}
+}
 
 void new_mode_test()
 {
@@ -138,7 +164,7 @@ void new_mode_test()
  		radio.packet_sent = 0;
  		switch_case = 0; 
 
- 		if (mode == 3)
+ 		if (mode == 3) // only run the heart rate in this mode 
  		{
  			HR_start(&HR);	
  		}
@@ -146,9 +172,17 @@ void new_mode_test()
  		{
  			HR_stop(&HR);
  		}
- 		if (mode == 6)
+ 		if (mode == 6) //load in the connecting for switching between sending and receiving 
  		{
  			connecting = 1; 
+ 			vibrate_notify = 1; 
+			digitalWrite(6,1);
+ 		}
+ 		if (mode == 7) // 
+ 		{
+ 			distence_value = 0 ;
+ 			vibrate_notify = 1; 
+			digitalWrite(6,1);
  		}
 		
 // 
@@ -168,9 +202,10 @@ void new_mode_test()
 	}
 }
 
-int main (void)	{
+int main (void)	
+{
 	
-	init();
+	init_all();
 	sei();
 
 
@@ -189,15 +224,16 @@ int main (void)	{
 		{			
 
 			new_mode_test();
+			memset(screen.buffer,0,sizeof(screen.buffer));
 			// current step is to draw some strings
-			GPS_readSerialInput(&gps);
 			memset(screen.buffer,0,sizeof(screen.buffer));
 			// GPS_printInfo(&gps); 
+			update_GPS();
 	
 			LSM_getHeading(&float_value); 
 			memset(buffer,0,sizeof(buffer));
 			FloatToStringNew(buffer,float_value,3);
-			screen_drawString(10, 5, buffer, screen.buffer); 
+			screen_drawString(5, 5, buffer, screen.buffer); 
 
 
 			LSM_getTemp(&float_value);
@@ -222,11 +258,11 @@ int main (void)	{
 
  			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer,"%d",mode);
- 			screen_drawString(110, 50, buffer, screen.buffer);  
+ 			screen_drawString(120, 60, buffer, screen.buffer);  
 
- 			if (gps.satellites == 0)
+ 			if (gps.satellites < 1)
  			{
- 				screen_drawFillCircle(120, 10, 2, ON, screen.buffer);
+ 				screen_drawFillCircle(120, 5, 2, ON, screen.buffer);
  			}
 
  			screen_sendBuffer(screen.buffer);
@@ -236,13 +272,28 @@ int main (void)	{
  		else if (mode==2)	
  		{
  			new_mode_test();
+ 			update_GPS();
+ 			memset(screen.buffer,0,sizeof(screen.buffer));
+
+ 			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer, "steps : %d", steps);
- 			screen_clear(screen.buffer);
- 			screen_drawString(5, 30, buffer, screen.buffer);
+ 			screen_drawString(0, 20, buffer, screen.buffer);
 
  			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer,"%d",mode);
- 			screen_drawString(120, 50, buffer, screen.buffer);  
+ 			screen_drawString(120, 60, buffer, screen.buffer);  
+
+ 			
+			memset(buffer,0,sizeof(buffer));
+			sprintf(buffer,"Dist Travled: ");
+			FloatToStringNew(&(buffer[14]),distence_travled,5);
+			screen_drawString(0, 40, buffer, screen.buffer);
+
+ 			if (gps.satellites < 2)
+ 			{
+ 				screen_drawFillCircle(120, 5, 2, ON, screen.buffer);
+ 			}
+
 
  			screen_sendBuffer(screen.buffer);
  		}
@@ -253,11 +304,11 @@ int main (void)	{
  		{
  			
  			new_mode_test();
- 			
+ 			memset(screen.buffer,0,sizeof(screen.buffer));
  			memset(buffer,0,sizeof(buffer));
 
 
- 			sprintf(buffer, "bpm: %d", HR.BPM);
+ 			sprintf(buffer, "BPM: %d", HR.BPM);
  			memset(screen.buffer,0,sizeof(screen.buffer));
  			screen_drawString(5, 30, buffer, screen.buffer);
 
@@ -267,8 +318,12 @@ int main (void)	{
 
  			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer,"%d",mode);
- 			screen_drawString(120, 50, buffer, screen.buffer);  
+ 			screen_drawString(120, 60, buffer, screen.buffer);  
  			
+ 			if (gps.satellites < 1)
+ 			{
+ 				screen_drawFillCircle(120, 5, 2, ON, screen.buffer);
+ 			}
 
  	// 		memset(data,0,sizeof(data));
 //  			sprintf(data,"%d",steps);
@@ -283,10 +338,11 @@ int main (void)	{
  		else if (mode==4)	
  		{
  			new_mode_test();
- 			GPS_readSerialInput(&gps);
+ 			memset(screen.buffer,0,sizeof(screen.buffer));
  			
  			// current step is to draw some strings
-			GPS_readSerialInput(&gps);
+			// GPS_readSerialInput(&gps);
+			update_GPS();
 
 			memset(buffer,0,sizeof(buffer));
 			sprintf(buffer,"long: ");
@@ -309,11 +365,11 @@ int main (void)	{
 
  			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer,"%d",mode);
- 			screen_drawString(120, 50, buffer, screen.buffer);  
+ 			screen_drawString(120, 60, buffer, screen.buffer);  
 
- 			if (gps.satellites == 0)
+ 			if (gps.satellites < 1)
  			{
- 				screen_drawFillCircle(120, 10, 2, ON, screen.buffer);
+ 				screen_drawFillCircle(120, 5, 2, ON, screen.buffer);
  			}
  			screen_sendBuffer(screen.buffer);
 
@@ -324,19 +380,33 @@ int main (void)	{
             // char latitude_remote[10];
             // char longitude_remote[10];
  			new_mode_test(); 
- 			memset(buffer,0,sizeof(buffer));
- 			// sprintf(buffer,"red button to track");
- 			screen_drawString(5, 30, "red button to track", screen.buffer);
+ 			// memset(buffer,0,sizeof(buffer));
+ 			// // sprintf(buffer,"red button to track");
+ 			// screen_drawString(5, 30, "red button to track", screen.buffer);
  			
- 			screen_sendBuffer(screen.buffer);
+ 			// screen_sendBuffer(screen.buffer);
+ 			draw_compass(); 
+
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 60, buffer, screen.buffer);  
+
+ 			if (gps.satellites == 0)
+ 			{
+ 				screen_drawFillCircle(120, 5, 2, ON, screen.buffer);
+ 			}
+
  		}
 
  		else if (mode == 6)
  		{
  			new_mode_test(); 
+ 			memset(screen.buffer,0,sizeof(screen.buffer));
  			memset(buffer,0,sizeof(buffer));
  			sprintf(buffer,"connecting");
  			memset(screen.buffer,0,sizeof(screen.buffer));
+
+ 	
 
  			if (switch_case == 0)
  			{
@@ -352,6 +422,8 @@ int main (void)	{
  			{
  				strcat(buffer,"...");
  				switch_case = 0;
+ 				vibrate_notify = 1; 
+				digitalWrite(6,1);
  			}
 
  			screen_drawString(5, 30, buffer, screen.buffer);
@@ -372,26 +444,46 @@ int main (void)	{
  				RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // RX
  			}
 
- 			
- 	
+ 			if (gps.satellites < 1)
+ 			{
+ 				screen_drawFillCircle(120, 5, 2, ON, screen.buffer);
+ 			}
+
+ 			memset(buffer,0,sizeof(buffer));
+ 			sprintf(buffer,"%d",mode);
+ 			screen_drawString(120, 60, buffer, screen.buffer);  
+ 			screen_sendBuffer(screen.buffer);
+
 
  		}
 
  		else if (mode == 7)
  		{
  			new_mode_test(); 
- 			GPS_readSerialInput(&gps); 	
+ 			memset(screen.buffer,0,sizeof(screen.buffer));
+
+ 			update_GPS();
+ 			NSEW = 0;
 
  			if (radio.currentMode == 1)
  			{
  				memset(buffer,0,sizeof(buffer));
  				// sprintf(buffer,"dist (km): ");
- 				screen_drawString(5, 5, "dist km: ", screen.buffer);
+ 				screen_drawString(5, 5, "dist m: ", screen.buffer);
  				
+ 			}
+
+ 			if (distence_value != 0)
+ 			{
+ 				memset(buffer,0,sizeof(buffer));
+    			FloatToStringNew(buffer, distence_value, 6);
+    			screen_drawString(60, 5, buffer, screen.buffer);
+				 			
  			}
  		
  			if (radio.receiveDataFlag)
  			{
+ 				distence_value = 0;
  				radio.receiveDataFlag = 0; //reset the flag 
  				Read_FIFO(radio.buffer, &radio.currentMode, slaveSelectPin);
  				RFM_setMode(&radio.currentMode, 1, slaveSelectPin); // if we want to continue recieving
@@ -408,105 +500,32 @@ int main (void)	{
 
 
     			
-    			float_value = GPS_calculate(&gps, atof(token_list[0]), atof(token_list[1])); 
-    			memset(buffer,0,sizeof(buffer));
-    			FloatToStringNew(buffer, float_value, 6);
-    			screen_drawString(60, 5, buffer, screen.buffer);
-				 			
+    			distence_value = GPS_calculate(&gps, atof(token_list[0]), atof(token_list[1]))*1000; 
+    	
  				//cheating way of finding bearing, not true bearing
-				if (gps.latitude <= atof(token_list[0]) && fabsf(gps.longitude) >= fabsf(atof(token_list[1])))	{
- 					screen_drawFillCircle(75, 20, 5, ON, screen.buffer);
+				if (gps.latitude <= atof(token_list[0]) && gps.longitude <= atof(token_list[1]))	{
+ 					//screen_drawFillCircle(75, 20, 5, ON, screen.buffer);
+ 					NSEW = 1;
  				}
- 				else if (gps.latitude <= atof(token_list[0]) && fabsf(gps.longitude) < fabsf(atof(token_list[1])))	{
- 					screen_drawFillCircle(45, 20, 5, ON, screen.buffer);
+ 				else if (gps.latitude <= atof(token_list[0]) && gps.longitude > atof(token_list[1]))	{
+ 					//screen_drawFillCircle(45, 20, 5, ON, screen.buffer);
+ 					NSEW = 2;
  				}
- 				else if (gps.latitude > atof(token_list[0]) && fabsf(gps.longitude) < fabsf(atof(token_list[1])))	{
- 					screen_drawFillCircle(45, 40, 5, ON, screen.buffer);
+ 				else if (gps.latitude > atof(token_list[0]) && gps.longitude > atof(token_list[1]))	{
+ 					//screen_drawFillCircle(45, 40, 5, ON, screen.buffer);
+ 					NSEW = 3;
  				}
- 				else if (gps.latitude > atof(token_list[0]) && fabsf(gps.longitude) >= fabsf(atof(token_list[1])))	{
- 					screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
+ 				else if (gps.latitude > atof(token_list[0]) && gps.longitude <= atof(token_list[1]))	{
+ 					//screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
+ 					NSEW = 4;
  				}
  			}
 			
-			LSM_getHeading(&float_value);
-
-			memset(buffer,0,sizeof(buffer));
-			if ( float_value > 290 || float_value < 10 ) //facing north 
-			{
-
-			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"n");
- 			screen_drawString(60, 10, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"w");
- 			screen_drawString(30, 30, buffer, screen.buffer); 
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"s");
- 			screen_drawString(60, 50, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"e");
- 			screen_drawString(90, 30, buffer, screen.buffer);  
+			
+ 			draw_compass(); 
 
 
-			}
-			else if (float_value <= 290 && float_value > 170 ) // facing west
-			{
-			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"w");
- 			screen_drawString(60, 10, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"s");
- 			screen_drawString(30, 30, buffer, screen.buffer); 
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"e");
- 			screen_drawString(60, 50, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"n");
- 			screen_drawString(90, 30, buffer, screen.buffer);
-
-			}
-			else if (float_value <= 170 && float_value > 80 ) //facing south 
-			{
-			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"s");
- 			screen_drawString(60, 10, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"e");
- 			screen_drawString(30, 30, buffer, screen.buffer); 
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"n");
- 			screen_drawString(60, 50, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"w");
- 			screen_drawString(90, 30, buffer, screen.buffer);
- 
-			}
-			else if (float_value <= 80 && float_value >= 10) // facing east 
-			{
-			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"e");
- 			screen_drawString(60, 10, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"n");
- 			screen_drawString(30, 30, buffer, screen.buffer); 
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"w");
- 			screen_drawString(60, 60, buffer, screen.buffer);  
- 			memset(buffer,0,sizeof(buffer));
- 			sprintf(buffer,"s");
- 			screen_drawString(90, 30, buffer, screen.buffer); 
-
-			}
-
-
-
-		 	// memset(buffer,0,sizeof(buffer));
-
-
- 			// LSM_getHeading(&float_value); 
-			memset(buffer,0,sizeof(buffer));
-			FloatToStringNew(buffer,float_value,3);
-			screen_drawString(5, 60, buffer, screen.buffer); 
+		 	// memset(buffer,0,sizeof(buffer))
 
  			
  					 	
@@ -525,39 +544,161 @@ int main (void)	{
 
 
 
+void draw_compass()
+{
+	LSM_getHeading(&float_value);
+
+	char dir_1[2];
+	char dir_2[2];
+	char dir_3[2];
+	char dir_4[2]; 
+
+	memset(buffer,0,sizeof(buffer));
+	if ( float_value > 290 || float_value < 10 ) //facing north 
+	{
+
+		strcpy(dir_1,"N");
+		strcpy(dir_2,"W");
+		strcpy(dir_3,"S");
+		strcpy(dir_4,"E");
+		if (NSEW == 1)	{
+			screen_drawFillCircle(75, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 2)	{
+			screen_drawFillCircle(45, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 3)	{
+			screen_drawFillCircle(45, 40, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 4)	{
+			screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
+		}
+	}
+
+
+	else if (float_value <= 290 && float_value > 150 ) // facing west
+	{
+		
+		strcpy(dir_1,"W");
+		strcpy(dir_2,"S");
+		strcpy(dir_3,"E");
+		strcpy(dir_4,"N");
+		if (NSEW == 2)	{
+			screen_drawFillCircle(75, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 3)	{
+			screen_drawFillCircle(45, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 4)	{
+			screen_drawFillCircle(45, 40, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 1)	{
+			screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
+		}
+
+	}
+	else if (float_value <= 150 && float_value > 80 ) //facing south 
+	{
+	
+		strcpy(dir_1,"S");
+		strcpy(dir_2,"E");
+		strcpy(dir_3,"N");
+		strcpy(dir_4,"W");
+		if (NSEW == 3)	{
+			screen_drawFillCircle(75, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 4)	{
+			screen_drawFillCircle(45, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 1)	{
+			screen_drawFillCircle(45, 40, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 2)	{
+			screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
+		}
+
+	}
+	else if (float_value <= 80 && float_value >= 10) // facing east 
+	{
+		strcpy(dir_1,"E");
+		strcpy(dir_2,"N");
+		strcpy(dir_3,"W");
+		strcpy(dir_4,"S");
+		if (NSEW == 4)	{
+			screen_drawFillCircle(75, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 1)	{
+			screen_drawFillCircle(45, 20, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 2)	{
+			screen_drawFillCircle(45, 40, 5, ON, screen.buffer);
+		}
+		else if (NSEW == 3)	{
+			screen_drawFillCircle(75, 40, 5, ON, screen.buffer);
+		}
+
+
+	}
+
+
+
+	screen_drawString(60, 10, dir_1, screen.buffer);  
+	screen_drawString(30, 30, dir_2, screen.buffer); 
+	screen_drawString(60, 50, dir_3, screen.buffer);  
+	screen_drawString(90, 30, dir_4, screen.buffer);
+
+
+	memset(buffer,0,sizeof(buffer));
+	FloatToStringNew(buffer,float_value,3);
+	strcat(buffer, " deg");
+	screen_drawString(0, 60, buffer, screen.buffer); 
+
+	screen_sendBuffer(screen.buffer);
+
+}
+
 
 
 // button interrupt commands --------------------------------------------
 ISR(PCINT2_vect)	
 {
-	new_mode = 1; 
-	if ((PIND & redbut)==0)	{
-		if (mode == 5)
+	
+	if ((PIND & redbut)==0)	
+	{
+		new_mode = 1; 
+		if (mode == 6 || mode == 7)
 		{
-			mode++ ; 
+			mode = 1 ; 
 		}
-
-		// char bufferbut[10];
-		// sprintf(bufferbut,"redbut %d",mode);
-		// serial_outputString(bufferbut);	
+		else 
+		{
+			mode = 6 ;
+		}
 		_delay_ms(1);
 		while ((PIND & redbut)==0)	{}
 		_delay_ms(1);
 	}
 	
 	else if ((PIND & greenbut)==0)	
-	{
-		mode--;
-		if (mode <= 0)	{
+	{	
+		vibrate = 1;
+		digitalWrite(6,1);
+
+		new_mode = 1; 
+		if (mode < 6)
+		{
+			mode--;
+		}
+		else 
+		{
+			return;  
+		}
+
+		if (mode <= 0)	
+		{
 			mode = 5;
 		}
-		else if (mode == 6)
-		{
-			mode = 1; 
-		}
-		// char bufferbut[10];
-		// sprintf(bufferbut,"green %d",mode);
-		// serial_outputString(bufferbut);	
+
 		_delay_ms(1);
 		while ((PIND & greenbut)==0)	{}
 		_delay_ms(1);
@@ -566,15 +707,27 @@ ISR(PCINT2_vect)
 
 ISR(PCINT0_vect)	
 {
-	new_mode = 1; 
-	if ((PINB & bluebut)==0)	{
-		mode++;
-		if (mode >= 8)	{
+	if ((PINB & bluebut)==0)	
+	{
+		vibrate = 1; 
+		digitalWrite(6,1);
+
+		new_mode = 1; 
+
+		if (mode < 5)
+		{
+			mode++;
+		}
+		else if (mode == 5)
+		{
 			mode = 1;
 		}
-		// char bufferbut[10];
-		// sprintf(bufferbut,"blue %d",mode);
-		// serial_outputString(bufferbut);	
+		else 
+		{
+			return;
+		}
+
+
 		_delay_ms(1);
 		while ((PINB & bluebut)==0)	{}
 		_delay_ms(1);
@@ -595,27 +748,43 @@ ISR(ADC_vect)
 	HR_read(&HR); 
 }
 
+ISR (TIMER0_COMPA_vect)  // every .06s 
+{
+
+	// serial_outputString("time");
+	if (vibrate <= 5)
+	{
+		digitalWrite(6,1);
+		vibrate++; 
+	}
+	else if (vibrate == 6)
+	{
+		digitalWrite(6,0);
+	}
+
+	if (vibrate_notify <= 10)
+	{
+		digitalWrite(6,1);
+		vibrate_notify++; 
+	}
+	else if (vibrate_notify == 11)
+	{
+		digitalWrite(6,0);
+	}
+
+}
+
 ISR(TIMER1_COMPA_vect) //happens every 5 s 
 {
-	// serial_outputString("time");
-	// if (gps.satellites == 0) // doesn't have a fix 
-	// {
-	// 	gps.seconds += 5; 
-	// 	if (gps.seconds >= 60)
-	// 	{
-	// 		gps.seconds = 0; 
-	// 		gps.minute += 1; 
-	// 	}	
-	// 	if (gps.minute >= 60)
-	// 	{
-	// 		gps.minute = 0; 
-	// 		gps.hour += 1; 
-	// 	}
-	// 	if (gps.hour >= 24)
-	// 	{
-	// 		gps.hour = 0; 
-	// 	}
-	// }
+	if (gps.satellites > 1)
+	{
+		if ((last_long != last_lat) && (last_lat != gps.latitude) && (last_long != gps.longitude)) 
+		{
+			distence_travled += GPS_calculate(&gps, last_lat, last_long); 
+		}
+		last_lat  = gps.latitude; 
+		last_long = gps.longitude; 
+	}
 
 	if (mode == 3)
 	{
@@ -647,6 +816,8 @@ ISR(INT0_vect) {
 		{
 			mode = 7;
 			new_mode = 1;
+			vibrate_notify = -4; 
+			digitalWrite(6,1);
 		}
 		
 	}

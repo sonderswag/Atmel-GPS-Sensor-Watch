@@ -5,6 +5,7 @@
 #include "fonts.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <avr/pgmspace.h>
 
 
 void screen_init()
@@ -188,32 +189,36 @@ void screen_drawChar(unsigned char pos_x, unsigned char pos_y,
 {
 
 
-    uint8_t ascii_offset;
-    if (letter >= '0' && letter <= ':')
-    {
-        ascii_offset = 46;
-    }
-    else if (letter == '.')
-    {
-        ascii_offset = 46; 
-    }
-    else if (letter >= 'a' && letter <= 'z')
-    {
-        ascii_offset = 84; 
-    }
-    else if (letter == ' ')
-    {
-        ascii_offset = 31;  
-    }
-    else 
-    {
-        return; 
-    }
+    uint8_t ascii_offset = 32;
+    // if (letter >= '0' && letter <= ':')
+    // {
+    //     ascii_offset = 46;
+    // }
+    // else if (letter == '.')
+    // {
+    //     ascii_offset = 46; 
+    // }
+    // else if (letter >= 'a' && letter <= 'z')
+    // {
+    //     ascii_offset = 84; 
+    // }
+    // else if (letter == ' ')
+    // {
+    //     ascii_offset = 31;  
+    // }
+    // else if (letter = '-')
+    // {
+    //     ascii_offset = 6;
+    // }
+    // else 
+    // {
+    //     return; 
+    // }
 
     char i ;
     for(i = 0; i < 5; i++)
     {
-        buff[i+((pos_y*128)+pos_x)] = Ascii_1[letter-ascii_offset][i];
+        buff[i+((pos_y*128)+pos_x)] = pgm_read_byte(&(Ascii_1[letter-ascii_offset][i]));
     }
 }
 
