@@ -10,8 +10,8 @@ There are two main files to run two different devices: Menu & Menu_small
 
 
 ![1](./Photos/1.jpg)
+
 ![2](./Photos/2.jpg)
-![3](./Photos/3.jpg)
 ![4](./Photos/4.jpg)
 ![5](./Photos/5.jpg)
 ![6](./Photos/6.jpg)
