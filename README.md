@@ -9,7 +9,7 @@ There are two main files to run two different devices: Menu & Menu_small
 - Menu: is for the main the device that has the heart rate monitor and is meant to be the device that is tracking. 
 
 
-![1](./Photos/1.jpg | width=100)
+![1](./Photos/1.jpg)
 
 ![2](./Photos/2.jpg)
 ![4](./Photos/4.jpg)
